@@ -1,19 +1,17 @@
-import { Component, ChangeDetectionStrategy, ChangeDetectorRef, ViewChild } from '@angular/core';
-import { delay } from 'rxjs/operators';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component } from '@angular/core';
 import * as dateFns from 'date-fns';
-import { Subject, Observable, of } from 'rxjs';
-
 import {
+  Helpers,
   IDataTableColumn,
-  RemoteDataTableService,
+  IDataTableFilter,
   IDataTablePaginationOptions,
+  IDataTablePreferences,
   IDataTableSearchOptions,
   NovoModalService,
-  IDataTablePreferences,
-  IDataTableFilter,
-  Helpers,
+  RemoteDataTableService,
 } from 'novo-elements';
-
+import { Observable, of, Subject } from 'rxjs';
+import { delay } from 'rxjs/operators';
 import { ConfigureColumnsModal, MockData } from '../extras';
 
 /**
@@ -27,11 +25,21 @@ import { ConfigureColumnsModal, MockData } from '../extras';
 })
 export class DataTableRemoteExample {
   // Table configuration
-  public dataSetOptions: any[] = [{ label: 'Dataset #1', value: 1 }, { label: 'Dataset #2', value: 2 }, { label: 'Dataset #3', value: 3 }];
+  public dataSetOptions: any[] = [
+    { label: 'Dataset #1', value: 1 },
+    { label: 'Dataset #2', value: 2 },
+    { label: 'Dataset #3', value: 3 },
+  ];
   public loadedDataSet: number = 1;
-  public paginationTypeOptions: any[] = [{ label: 'Standard', value: 'standard' }, { label: 'Basic', value: 'basic' }];
+  public paginationTypeOptions: any[] = [
+    { label: 'Standard', value: 'standard' },
+    { label: 'Basic', value: 'basic' },
+  ];
   public loadedPaginationType: string = 'standard';
-  public globalSearchOptions: any[] = [{ label: 'Show', value: true }, { label: 'Hide', value: false }];
+  public globalSearchOptions: any[] = [
+    { label: 'Show', value: true },
+    { label: 'Hide', value: false },
+  ];
   public loadedGlobalSearch: boolean = false;
 
   // Shared configuration
@@ -186,7 +194,10 @@ export class DataTableRemoteExample {
       sortable: true,
       filterable: {
         type: 'select',
-        options: [{ value: true, label: 'True' }, { value: false, label: 'False' }],
+        options: [
+          { value: true, label: 'True' },
+          { value: false, label: 'False' },
+        ],
       },
     },
     {
@@ -247,7 +258,7 @@ export class DataTableRemoteExample {
 
   constructor(private ref: ChangeDetectorRef, private modalService: NovoModalService) {
     for (let i = 0; i < 1000; i++) {
-      let day = i < 500 ? dateFns.subDays(new Date(), i) : dateFns.addDays(new Date(), i - 500);
+      const day = i < 500 ? dateFns.subDays(new Date(), i) : dateFns.addDays(new Date(), i - 500);
       this.staticDataSet1.push({
         id: i,
         embeddedObj: { id: i, test: `HMM ${i}`, another: { id: 777 } },
@@ -275,7 +286,7 @@ export class DataTableRemoteExample {
   }
 
   public getPriorityOptions() {
-    let options = new Array();
+    const options = new Array();
     let i;
     for (i = 0; i < 49; i++) {
       options.push('test ' + i.toString());
@@ -306,7 +317,7 @@ export class DataTableRemoteExample {
       .open(ConfigureColumnsModal, { columns: this.sharedColumns })
       .onClosed.then((columns: IDataTableColumn<MockData>[]) => {
         if (columns) {
-          let enabledColumns = columns.filter((column: IDataTableColumn<MockData>) => column.enabled);
+          const enabledColumns = columns.filter((column: IDataTableColumn<MockData>) => column.enabled);
           this.sharedDisplayColumns = ['selection', 'expand', ...enabledColumns.map((column: IDataTableColumn<MockData>) => column.id)];
           this.ref.markForCheck();
         }
@@ -336,17 +347,17 @@ class RemoteMockDataService extends RemoteDataTableService<MockData> {
     pageSize: number,
     globalSearch?: string,
   ): Observable<{ results: MockData[]; total: number }> {
-    let whereQuery: string = this.buildWhereClause(filter);
-    let sortQuery: string = this.buildSortColumn(sort);
-    let pageQuery: number = this.buildStart(page, pageSize);
+    const whereQuery: string = this.buildWhereClause(filter);
+    const sortQuery: string = this.buildSortColumn(sort);
+    const pageQuery: number = this.buildStart(page, pageSize);
     this.url = `http://mock-api.com?where=${whereQuery}&sort=${sortQuery}&pageSize=${pageSize}&page=${pageQuery}`;
     return of({ results: this.data, total: this.data.length }).pipe(delay(5000));
   }
 
   private buildWhereClause(filter: IDataTableFilter | IDataTableFilter[]): string {
-    let query: any = {};
+    const query: any = {};
     if (filter) {
-      let filters = Helpers.convertToArray(filter);
+      const filters = Helpers.convertToArray(filter);
       filters.forEach((aFilter) => {
         query[aFilter.id] = aFilter.transform ? aFilter.transform(aFilter.value) : aFilter.value;
       });
@@ -370,9 +381,9 @@ class RemoteMockDataService extends RemoteDataTableService<MockData> {
   }
 
   private toQuerySyntax(data: any) {
-    let queries: Array<string> = [];
-    for (let key in data) {
-      let value = data[key];
+    const queries: Array<string> = [];
+    for (const key in data) {
+      const value = data[key];
       if (key === 'or') {
         queries.push(`(${this.toQuerySyntax(value).replace(/ AND /g, ' OR ')})`);
       } else {
@@ -384,7 +395,7 @@ class RemoteMockDataService extends RemoteDataTableService<MockData> {
   }
 
   private parseQueryValue(key: string, value: any, isNot: boolean = false) {
-    let clauses: Array<string> = [],
+    const clauses: Array<string> = [],
       IN = isNot ? ' NOT IN ' : ' IN ',
       EQ = isNot ? '<>' : '=',
       GT = isNot ? '<' : '>=',
@@ -393,7 +404,7 @@ class RemoteMockDataService extends RemoteDataTableService<MockData> {
       clauses.push(`${key}${IN}(${this.writeQueryValues(value)})`);
     } else if (value instanceof Object) {
       if (typeof value.isNull === 'boolean') {
-        let query: string = value.isNull ? 'IS NULL' : 'IS NOT NULL';
+        const query: string = value.isNull ? 'IS NULL' : 'IS NOT NULL';
         clauses.push(`${key} ${query}`);
       }
       if (value.min !== null && value.min !== undefined) {
@@ -415,7 +426,7 @@ class RemoteMockDataService extends RemoteDataTableService<MockData> {
         clauses.push(`${key} like '%${value.like}%'`);
       }
       if (value.lookup !== null && value.lookup !== undefined) {
-        let obj = {};
+        const obj = {};
         obj[key] = value.lookup;
         clauses.push(this.toQuerySyntax(obj));
       }
@@ -426,13 +437,13 @@ class RemoteMockDataService extends RemoteDataTableService<MockData> {
         clauses.push(`${key} IS EMPTY`);
       }
       if (value.or !== null && value.or !== undefined) {
-        let obj = {};
+        const obj = {};
         obj[key] = value.or;
         clauses.push(this.toQuerySyntax(obj).replace('AND', 'OR'));
       }
-      for (let subkey in value) {
+      for (const subkey in value) {
         if (['min', 'max', 'any', 'all', 'not', 'or', 'like', 'lookup', 'with', 'without', 'isNull'].indexOf(subkey) < 0) {
-          let subvalue = value[subkey];
+          const subvalue = value[subkey];
           clauses.push(this.parseQueryValue(`${key}.${subkey}`, subvalue));
         }
       }

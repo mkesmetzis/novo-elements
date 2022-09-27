@@ -16,7 +16,7 @@ export const TableColumns = [
       return object.ext.obj;
     },
     compare: (sort, previous, current) => {
-      let first = previous.obj,
+      const first = previous.obj,
         second = current.obj;
 
       if (first > second) {
@@ -60,7 +60,11 @@ export const TableColumns = [
       {
         category: 'Update Status',
         callback: (data: any, status: string) => window.alert(`Update Status ${status}!`),
-        options: [{ label: 'New Lead', value: 'New Lead' }, { label: 'Active', value: 'Active' }, { label: 'Archived', value: 'Archived' }],
+        options: [
+          { label: 'New Lead', value: 'New Lead' },
+          { label: 'Active', value: 'Active' },
+          { label: 'Archived', value: 'Archived' },
+        ],
       },
       {
         category: 'Move',

@@ -1,16 +1,15 @@
-import { Component, ChangeDetectionStrategy, ChangeDetectorRef, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ViewChild } from '@angular/core';
 import * as dateFns from 'date-fns';
-import { Subject } from 'rxjs';
-
 import {
   IDataTableColumn,
   IDataTablePaginationOptions,
-  IDataTableSearchOptions,
-  NovoModalService,
-  NovoDataTable,
   IDataTablePreferences,
+  IDataTableSearchOptions,
+  IDataTableSelectionOption,
+  NovoDataTable,
+  NovoModalService,
 } from 'novo-elements';
-
+import { Subject } from 'rxjs';
 import { ConfigureColumnsModal, MockData } from '../extras';
 
 /**
@@ -27,11 +26,22 @@ export class DataTableRowsExample {
   table: NovoDataTable<MockData>;
 
   // Table configuration
-  public dataSetOptions: any[] = [{ label: 'Dataset #1', value: 1 }, { label: 'Dataset #2', value: 2 }, { label: 'Dataset #3', value: 3 }];
+  public dataSetOptions: any[] = [
+    { label: 'Dataset #1', value: 1 },
+    { label: 'Dataset #2', value: 2 },
+    { label: 'Dataset #3', value: 3 },
+  ];
   public loadedDataSet: number = 1;
-  public paginationTypeOptions: any[] = [{ label: 'Standard', value: 'standard' }, { label: 'Basic', value: 'basic' }];
+  public paginationTypeOptions: any[] = [
+    { label: 'Standard', value: 'standard' },
+    { label: 'Basic', value: 'basic' },
+  ];
+  public selectionOptions: IDataTableSelectionOption[] = [];
   public loadedPaginationType: string = 'standard';
-  public globalSearchOptions: any[] = [{ label: 'Show', value: true }, { label: 'Hide', value: false }];
+  public globalSearchOptions: any[] = [
+    { label: 'Show', value: true },
+    { label: 'Hide', value: false },
+  ];
   public loadedGlobalSearch: boolean = false;
   public customStatusColumnValue: string = '';
   public customStatusColumnOptions: object[] = [
@@ -44,6 +54,7 @@ export class DataTableRowsExample {
       value: '',
     },
   ];
+  public retentionEnabled: boolean = false;
 
   // Shared configuration
   public sharedColumns: IDataTableColumn<MockData>[] = [
@@ -134,6 +145,7 @@ export class DataTableRowsExample {
         allowCustomRange: true,
       },
       sortable: true,
+      format: '$year-$month-$day $hour:$minute',
     },
     {
       id: 'dateTime',
@@ -206,7 +218,10 @@ export class DataTableRowsExample {
       sortable: true,
       filterable: {
         type: 'select',
-        options: [{ value: true, label: 'True' }, { value: false, label: 'False' }],
+        options: [
+          { value: true, label: 'True' },
+          { value: false, label: 'False' },
+        ],
       },
     },
     {
@@ -239,6 +254,7 @@ export class DataTableRowsExample {
     'bigdecimal',
     'embeddedObj',
     'edit',
+    'enabled',
   ];
   public sharedPaginationOptions: IDataTablePaginationOptions = {
     theme: 'standard',
@@ -272,7 +288,7 @@ export class DataTableRowsExample {
 
   constructor(private ref: ChangeDetectorRef, private modalService: NovoModalService) {
     for (let i = 0; i < 1000; i++) {
-      let day = i < 500 ? dateFns.subDays(new Date(), i) : dateFns.addDays(new Date(), i - 500);
+      const day = i < 500 ? dateFns.subDays(new Date(), i) : dateFns.addDays(new Date(), i - 500);
       this.staticDataSet1.push({
         id: i,
         embeddedObj: { id: i, test: `HMM ${i}`, another: { id: 777 } },
@@ -319,7 +335,7 @@ export class DataTableRowsExample {
   }
 
   public getPriorityOptions() {
-    let options = new Array();
+    const options = new Array();
     let i;
     for (i = 0; i < 49; i++) {
       options.push('test ' + i.toString());
@@ -371,7 +387,7 @@ export class DataTableRowsExample {
       .open(ConfigureColumnsModal, { columns: this.sharedColumns })
       .onClosed.then((columns: IDataTableColumn<MockData>[]) => {
         if (columns) {
-          let enabledColumns = columns.filter((column: IDataTableColumn<MockData>) => column.enabled);
+          const enabledColumns = columns.filter((column: IDataTableColumn<MockData>) => column.enabled);
           this.sharedDisplayColumns = ['selection', 'expand', ...enabledColumns.map((column: IDataTableColumn<MockData>) => column.id)];
           this.ref.markForCheck();
         }
@@ -387,6 +403,7 @@ export class DataTableRowsExample {
   }
 
   public refresh(): void {
+    this.table.state.reset();
     this.refreshSubject.next();
   }
 
@@ -395,12 +412,21 @@ export class DataTableRowsExample {
   }
 
   public filterList(value: any): void {
-    this.table.state.filter = { id: 'status', type: 'text', value: value };
+    this.table.state.filter = { id: 'status', type: 'text', value };
     this.table.state.updates.next({
       globalSearch: this.table.state.globalSearch,
       filter: this.table.state.filter,
       sort: this.table.state.sort,
     });
     this.ref.markForCheck();
+  }
+
+  public toggle(event) {
+    if (event) {
+      this.selectionOptions = [{ label: 'page' }];
+    } else {
+      this.selectionOptions = [];
+    }
+    this.table.state.selectionOptions = this.selectionOptions;
   }
 }

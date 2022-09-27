@@ -1,30 +1,32 @@
 // NG2
+import { async, inject, TestBed } from '@angular/core/testing';
 import { FormGroup } from '@angular/forms';
-import { TestBed, async, inject } from '@angular/core/testing';
 // Vendor
 import { from } from 'rxjs';
 // APP
 import {
   AddressControl,
-  CheckListControl,
   CheckboxControl,
+  CheckListControl,
   DateControl,
   DateTimeControl,
   EditorControl,
   FileControl,
+  NovoControlConfig,
   PickerControl,
   RadioControl,
   SelectControl,
+  SwitchControl,
   TextAreaControl,
   TextBoxControl,
   TilesControl,
   TimeControl,
 } from '../../elements/form/FormControls';
-import { FormUtils } from './FormUtils';
+import { FormField } from '../../elements/form/FormInterfaces';
 import { NovoFormControl } from '../../elements/form/NovoFormControl';
 import { NovoLabelService } from '../../services/novo-label-service';
 import { OptionsService } from '../../services/options/OptionsService';
-import { FormField } from '../../elements/form/FormInterfaces';
+import { FormUtils } from './FormUtils';
 
 /**
  * Creates a mock address
@@ -36,11 +38,11 @@ function createAddress(address1, city, state, zip, countryName) {
     };
   }
   return {
-    address1: address1,
-    city: city,
-    state: state,
-    zip: zip,
-    countryName: countryName,
+    address1,
+    city,
+    state,
+    zip,
+    countryName,
   };
 }
 
@@ -48,7 +50,7 @@ describe('Utils: FormUtils', () => {
   let formUtils;
 
   beforeEach(async(() => {
-    let optionsService = {
+    const optionsService = {
       getOptionEntity: () => {
         return '';
       },
@@ -85,8 +87,8 @@ describe('Utils: FormUtils', () => {
   describe('Method: toFormGroup(controls)', () => {
     it('should create a FormGroup from a collection of controls.', () => {
       expect(formUtils.toFormGroup).toBeDefined();
-      let mockControls: Array<any> = [{ key: 'Test' }];
-      let result = formUtils.toFormGroup(mockControls);
+      const mockControls: Array<any> = [{ key: 'Test' }];
+      const result = formUtils.toFormGroup(mockControls);
       expect(result instanceof FormGroup).toBe(true);
       expect(result.controls.Test).toBeDefined();
       expect(result.controls.Test instanceof NovoFormControl).toBe(true);
@@ -96,29 +98,29 @@ describe('Utils: FormUtils', () => {
   describe('Method: addControls(formGroup, controls)', () => {
     it('should add controls to a form group.', () => {
       expect(formUtils.addControls).toBeDefined();
-      let formGroup: FormGroup = formUtils.toFormGroup([{ key: 'Test' }]);
+      const formGroup: FormGroup = formUtils.toFormGroup([{ key: 'Test' }]);
       formUtils.addControls(formGroup, [{ key: 'Test2' }]);
       // Can't use `.Test2` because the formGroup isn't returned
-      expect(formGroup.controls['Test2']).toBeDefined();
-      expect(formGroup.controls['Test2'] instanceof NovoFormControl).toBe(true);
+      expect(formGroup.controls.Test2).toBeDefined();
+      expect(formGroup.controls.Test2 instanceof NovoFormControl).toBe(true);
     });
   });
 
   describe('Method: removeControls(formGroup, controls)', () => {
     it('should remove controls from a form group.', () => {
       expect(formUtils.removeControls).toBeDefined();
-      let formGroup: FormGroup = formUtils.toFormGroup([{ key: 'Test' }, { key: 'Test2' }]);
+      const formGroup: FormGroup = formUtils.toFormGroup([{ key: 'Test' }, { key: 'Test2' }]);
       formUtils.removeControls(formGroup, [{ key: 'Test2' }]);
       // Can't use `.Test2` because the formGroup isn't returned
-      expect(formGroup.controls['Test2']).not.toBeDefined();
+      expect(formGroup.controls.Test2).not.toBeDefined();
     });
   });
 
   describe('Method: toFormGroupFromFieldset(fieldsets)', () => {
     it('should create FormGroups from a collection of FieldSets that contain controls.', () => {
       expect(formUtils.toFormGroup).toBeDefined();
-      let mockControls: Array<any> = [{ key: 'Test' }];
-      let fieldSet = formUtils.toFormGroupFromFieldset([{ title: 'Test', controls: mockControls }]);
+      const mockControls: Array<any> = [{ key: 'Test' }];
+      const fieldSet = formUtils.toFormGroupFromFieldset([{ title: 'Test', controls: mockControls }]);
       expect(fieldSet.controls.Test).toBeDefined();
       expect(fieldSet.controls.Test instanceof NovoFormControl).toBe(true);
     });
@@ -206,11 +208,17 @@ describe('Utils: FormUtils', () => {
     it('should return the type of WorkflowOptionsLookup correctly.', () => {
       expect(formUtils.determineInputType({ dataSpecialization: 'WorkflowOptionsLookup' })).toBe('select');
     });
+    it('should return the type of AllWorkflowOptionsLookup correctly.', () => {
+      expect(formUtils.determineInputType({ dataSpecialization: 'AllWorkflowOptionsLookup' })).toBe('select');
+    });
     it('should return the type of SpecializedOptionsLookup correctly.', () => {
       expect(formUtils.determineInputType({ dataSpecialization: 'SpecializedOptionsLookup' })).toBe('select');
     });
     it('should return the type of WorkflowOptions correctly.', () => {
       expect(formUtils.determineInputType({ dataSpecialization: 'WORKFLOW_OPTIONS' })).toBe('select');
+    });
+    it('should return the type of AllWorkflowOptions correctly.', () => {
+      expect(formUtils.determineInputType({ dataSpecialization: 'ALL_WORKFLOW_OPTIONS' })).toBe('select');
     });
     it('should return the type of SpecializedOptions correctly.', () => {
       expect(formUtils.determineInputType({ dataSpecialization: 'SPECIALIZED_OPTIONS' })).toBe('select');
@@ -258,86 +266,91 @@ describe('Utils: FormUtils', () => {
   describe('Method: getControlForField(field, http, config)', () => {
     xit('should return the right component for entitychips', () => {
       expect(formUtils.getControlForField).toBeDefined();
-      let result = formUtils.getControlForField({ type: 'entitychips' });
+      const result = formUtils.getControlForField({ type: 'entitychips' });
       expect(result instanceof PickerControl).toBe(true);
     });
     xit('should return the right component for entitypicker', () => {
       expect(formUtils.getControlForField).toBeDefined();
-      let result = formUtils.getControlForField({ type: 'entitypicker' });
+      const result = formUtils.getControlForField({ type: 'entitypicker' });
       expect(result instanceof PickerControl).toBe(true);
     });
     it('should return the right component for picker', () => {
       expect(formUtils.getControlForField).toBeDefined();
-      let result = formUtils.getControlForField({ type: 'picker' });
+      const result = formUtils.getControlForField({ type: 'picker' });
       expect(result instanceof PickerControl).toBe(true);
     });
     it('should return the right component for datetime', () => {
       expect(formUtils.getControlForField).toBeDefined();
-      let result = formUtils.getControlForField({ type: 'datetime' });
+      const result = formUtils.getControlForField({ type: 'datetime' });
       expect(result instanceof DateTimeControl).toBe(true);
     });
     it('should return the right component for date', () => {
       expect(formUtils.getControlForField).toBeDefined();
-      let result = formUtils.getControlForField({ type: 'date' });
+      const result = formUtils.getControlForField({ type: 'date' });
       expect(result instanceof DateControl).toBe(true);
     });
     it('should return the right component for time', () => {
       expect(formUtils.getControlForField).toBeDefined();
-      let result = formUtils.getControlForField({ type: 'time' });
+      const result = formUtils.getControlForField({ type: 'time' });
       expect(result instanceof TimeControl).toBe(true);
     });
     it('should return the right component for currency', () => {
       expect(formUtils.getControlForField).toBeDefined();
-      let result = formUtils.getControlForField({ type: 'currency' });
+      const result = formUtils.getControlForField({ type: 'currency' });
       expect(result instanceof TextBoxControl).toBe(true);
     });
     it('should return the right component for text', () => {
       expect(formUtils.getControlForField).toBeDefined();
-      let result = formUtils.getControlForField({ type: 'text' });
+      const result = formUtils.getControlForField({ type: 'text' });
       expect(result instanceof TextBoxControl).toBe(true);
     });
     it('should return the right component for textarea', () => {
       expect(formUtils.getControlForField).toBeDefined();
-      let result = formUtils.getControlForField({ type: 'textarea' });
+      const result = formUtils.getControlForField({ type: 'textarea' });
       expect(result instanceof TextAreaControl).toBe(true);
     });
     it('should return the right component for editor', () => {
       expect(formUtils.getControlForField).toBeDefined();
-      let result = formUtils.getControlForField({ type: 'editor' });
+      const result = formUtils.getControlForField({ type: 'editor' });
       expect(result instanceof EditorControl).toBe(true);
     });
     it('should return the right component for tiles', () => {
       expect(formUtils.getControlForField).toBeDefined();
-      let result = formUtils.getControlForField({ type: 'tiles' });
+      const result = formUtils.getControlForField({ type: 'tiles' });
       expect(result instanceof TilesControl).toBe(true);
     });
     it('should return the right component for checkbox', () => {
       expect(formUtils.getControlForField).toBeDefined();
-      let result = formUtils.getControlForField({ type: 'checkbox' });
+      const result = formUtils.getControlForField({ type: 'checkbox' });
       expect(result instanceof CheckboxControl).toBe(true);
+    });
+    it('should return the right component for switch', () => {
+      expect(formUtils.getControlForField).toBeDefined();
+      const result = formUtils.getControlForField({ type: 'switch' });
+      expect(result instanceof SwitchControl).toBe(true);
     });
     it('should return the right component for checklist', () => {
       expect(formUtils.getControlForField).toBeDefined();
-      let result = formUtils.getControlForField({ type: 'checklist' });
+      const result = formUtils.getControlForField({ type: 'checklist' });
       expect(result instanceof CheckListControl).toBe(true);
     });
     it('should return the right component for radio', () => {
       expect(formUtils.getControlForField).toBeDefined();
-      let result = formUtils.getControlForField({ type: 'radio' });
+      const result = formUtils.getControlForField({ type: 'radio' });
       expect(result instanceof RadioControl).toBe(true);
     });
     it('should return the right component for select', () => {
       expect(formUtils.getControlForField).toBeDefined();
-      let result = formUtils.getControlForField({ type: 'select' });
+      const result = formUtils.getControlForField({ type: 'select' });
       expect(result instanceof SelectControl).toBe(true);
     });
     it('should return the right component for editor minimal', () => {
-      let result = formUtils.getControlForField({ type: 'editor-minimal' });
+      const result = formUtils.getControlForField({ type: 'editor-minimal' });
       expect(result instanceof EditorControl).toBeTruthy();
     });
     it('should return the right component for WorkflowOptions and call getControlOptions with data', () => {
       const field: { type: string } = { type: 'select' };
-      spyOn(formUtils, 'getControlOptions');
+      jest.spyOn(formUtils, 'getControlOptions');
       const result = formUtils.getControlForField(field, undefined, undefined, undefined, undefined, 'First');
       expect(formUtils.getControlOptions).toHaveBeenCalledWith(field, undefined, undefined, 'First');
       expect(result instanceof SelectControl).toBeTruthy();
@@ -345,12 +358,12 @@ describe('Utils: FormUtils', () => {
     describe('with type: address', () => {
       it('should return the right component for address', () => {
         expect(formUtils.getControlForField).toBeDefined();
-        let result = formUtils.getControlForField({ type: 'address' });
+        const result = formUtils.getControlForField({ type: 'address' });
         expect(result instanceof AddressControl).toBe(true);
       });
       it('should set the right defaults for address sub-fields', () => {
         expect(formUtils.getControlForField).toBeDefined();
-        let result = formUtils.getControlForField({
+        const result = formUtils.getControlForField({
           type: 'address',
           fields: [
             {
@@ -391,7 +404,7 @@ describe('Utils: FormUtils', () => {
     });
     it('should return the right component for file', () => {
       expect(formUtils.getControlForField).toBeDefined();
-      let result = formUtils.getControlForField({ type: 'file' });
+      const result = formUtils.getControlForField({ type: 'file' });
       expect(result instanceof FileControl).toBe(true);
     });
   });
@@ -410,7 +423,7 @@ describe('Utils: FormUtils', () => {
     });
 
     it('should return an array of fieldsets with a title, icon and controls', () => {
-      let meta = {
+      const meta = {
         entity: 'ENTITY_NAME',
         label: 'ENTITY_LABEL',
         fields: [
@@ -419,9 +432,30 @@ describe('Utils: FormUtils', () => {
             type: 'text',
             label: 'First Name',
             required: true,
-            sortOrder: 10,
+            sortOrder: 20,
             maxLength: 10,
             description: 'First Name, Yo!',
+          },
+          {
+            name: 'inlineEmbeddedField',
+            dataSpecialization: 'INLINE_EMBEDDED',
+            sortOrder: 10,
+            associatedEntity: {
+              fields: [
+                {
+                  name: 'field1',
+                  type: 'text',
+                  label: 'Field 1',
+                  sortOrder: 10,
+                },
+                {
+                  name: 'field2',
+                  type: 'text',
+                  label: 'Field 2',
+                  sortOrder: 30,
+                },
+              ],
+            },
           },
         ],
         sectionHeaders: [
@@ -434,13 +468,14 @@ describe('Utils: FormUtils', () => {
           },
         ],
       };
-      let fieldset = formUtils.toFieldSets(meta, 'USD', {}, {}, {});
+      const fieldset = formUtils.toFieldSets(meta, 'USD', {}, {}, {});
       expect(fieldset[0].title).toBe('Header');
       expect(fieldset[0].icon).toBe('bhi-certification');
-      expect(fieldset[0].controls.length).toBe(1);
+      expect(fieldset[0].controls.length).toBe(3);
+      expect(fieldset[0].controls[0].key).toEqual('inlineEmbeddedField.field1');
     });
     it('should call getControlForField with data', () => {
-      let meta = {
+      const meta = {
         entity: 'ENTITY_NAME',
         label: 'ENTITY_LABEL',
         fields: [
@@ -464,7 +499,7 @@ describe('Utils: FormUtils', () => {
           },
         ],
       };
-      spyOn(formUtils, 'getControlForField').and.returnValue({});
+      jest.spyOn(formUtils, 'getControlForField').mockReturnValue({});
       formUtils.toFieldSets(meta, 'USD', {}, {}, {}, { firstName: 'First' });
       expect(formUtils.getControlForField).toHaveBeenCalledWith(meta.fields[0], {}, {}, {}, undefined, 'First');
     });
@@ -477,7 +512,7 @@ describe('Utils: FormUtils', () => {
     });
     it('should return an object with a function that returns a promise when there is an optionsUrl', () => {
       expect(formUtils.getControlOptions).toBeDefined();
-      let result = formUtils.getControlOptions({ optionsUrl: 'TEST' });
+      const result = formUtils.getControlOptions({ optionsUrl: 'TEST' });
       expect(result.field).toBe('value');
       expect(result.format).toBe('$label');
       expect(result.options('') instanceof Promise).toBe(true);
@@ -487,12 +522,12 @@ describe('Utils: FormUtils', () => {
     });
     it('should return an object with a function that returns a promise when there is an optionsUrl that calls an API', () => {
       expect(formUtils.getControlOptions).toBeDefined();
-      let mockHttp = {
+      const mockHttp = {
         get: () => {
           return from([]);
         },
       };
-      let result = formUtils.getControlOptions({ optionsUrl: 'TEST' }, mockHttp, { token: '1' });
+      const result = formUtils.getControlOptions({ optionsUrl: 'TEST' }, mockHttp, { token: '1' });
       expect(result.field).toBe('value');
       expect(result.format).toBe('$label');
       expect(result.options('') instanceof Promise).toBe(true);
@@ -502,46 +537,123 @@ describe('Utils: FormUtils', () => {
     });
     it('should return an object with an array, label, and format for chips', () => {
       expect(formUtils.getControlOptions).toBeDefined();
-      let result = formUtils.getControlOptions({ type: 'chips', options: [1] });
+      const result = formUtils.getControlOptions({ type: 'chips', options: [1] });
       expect(result.options.length).toBe(1);
       expect(result.field).toBe('value');
       expect(result.format).toBe('$label');
     });
     it('should return an array when options is an array', () => {
       expect(formUtils.getControlOptions).toBeDefined();
-      let result = formUtils.getControlOptions({ dataSpecialization: 'DATETIME' });
+      const result = formUtils.getControlOptions({ dataSpecialization: 'DATETIME' });
     });
-    it('should return an array when there are WorkflowOptions', () => {
+    it('should return an array when there are WorkflowOptions and a value', () => {
       const field: { workflowOptions: Object } = {
         workflowOptions: {
-          '1': [{ value: '1', label: '1' }],
-          '2': [{ value: '2', label: '2' }],
+          initial: [
+            { value: 1, label: 'one' },
+            { value: 2, label: 'two' },
+          ],
+          1: [{ value: 2, label: 'two' }],
+          2: [{ value: 3, label: 'three' }],
+          3: [],
         },
       };
-      const expected: Array<{ value: string; label: string }> = [{ value: '2', label: '2' }];
-      const result = formUtils.getControlOptions(field, undefined, undefined, { id: '2' });
-      expect(result).toEqual(expected);
+      const result = formUtils.getControlOptions(field, undefined, undefined, { id: 2, label: 'two', shouldRunValidationsOnSave: true });
+      expect(result).toEqual([
+        { id: 2, shouldRunValidationsOnSave: true, value: 2, label: 'two' },
+        { value: 3, label: 'three' },
+      ]);
     });
     it('should add current option to array if current value is not there for WorkflowOptions', () => {
       const field: { workflowOptions: Object } = {
         workflowOptions: {
-          '1': [{ value: '1', label: 'one' }, { value: '3', label: 'three' }],
-          '2': [{ value: '2', label: 'two' }],
+          initial: [
+            { value: 1, label: 'one' },
+            { value: 2, label: 'two' },
+          ],
+          1: [{ value: 2, label: 'two' }],
+          2: [{ value: 3, label: 'three' }],
+          3: [],
         },
       };
-      const expected: Array<{ value: string; label: string }> = [{ value: '1', label: 'one' }, { value: '3', label: 'three' }];
+      const result = formUtils.getControlOptions(field, undefined, undefined, { id: 3, label: 'three' });
+      expect(result).toEqual([{ id: 3, value: 3, label: 'three' }]);
+    });
+    it('should return initial options when value has no id', () => {
+      const field: { workflowOptions: Object } = {
+        workflowOptions: {
+          initial: [
+            { value: 1, label: 'one' },
+            { value: 2, label: 'two' },
+          ],
+          1: [{ value: 2, label: 'two' }],
+          2: [{ value: 3, label: 'three' }],
+          3: [],
+        },
+      };
+      const result = formUtils.getControlOptions(field, undefined, undefined, { label: '2' });
+      expect(result).toEqual([
+        { value: 1, label: 'one' },
+        { value: 2, label: 'two' },
+      ]);
+    });
+    it('should return initial options when value is null', () => {
+      const field: { workflowOptions: Object } = {
+        workflowOptions: {
+          initial: [
+            { value: 1, label: 'one' },
+            { value: 2, label: 'two' },
+          ],
+          1: [{ value: 2, label: 'two' }],
+          2: [{ value: 3, label: 'three' }],
+          3: [],
+        },
+      };
+      const result = formUtils.getControlOptions(field, undefined, undefined, null);
+      expect(result).toEqual([
+        { value: 1, label: 'one' },
+        { value: 2, label: 'two' },
+      ]);
+    });
+    it('should return empty array when workflow options are missing', () => {
+      const field: { workflowOptions: Object } = {
+        workflowOptions: {},
+      };
+      const result = formUtils.getControlOptions(field, undefined, undefined, null);
+      expect(result).toEqual([]);
+    });
+    it('should return all options when there are SpecializedOptions', () => {
+      const field: any = {
+        dataType: 'SpecializedOptionsLookup',
+        options: [
+          { value: '1', label: 'one', readOnly: true },
+          { value: '2', label: 'two', readOnly: false },
+          { value: '3', label: 'three', readOnly: false },
+        ],
+      };
+      const expected: Array<{ value: string; label: string; readOnly: boolean }> = [
+        { value: '1', label: 'one', readOnly: true },
+        { value: '2', label: 'two', readOnly: false },
+        { value: '3', label: 'three', readOnly: false },
+      ];
       const result = formUtils.getControlOptions(field, undefined, undefined, { id: '1', label: 'one' });
       expect(result).toEqual(expected);
     });
-    it('should return an array when there are WorkflowOptions and value has no id', () => {
-      const field: { workflowOptions: Object } = {
-        workflowOptions: {
-          initial: [{ value: '1', label: '1' }],
-          '2': [{ value: '2', label: '2' }],
-        },
+    it('should return all options when dataSpecialization is ALL_WORKFLOW_OPTIONS', () => {
+      const field: any = {
+        dataType: 'ALL_WORKFLOW_OPTIONS',
+        options: [
+          { value: '1', label: 'uno', readOnly: false },
+          { value: '2', label: 'dos', readOnly: false },
+          { value: '3', label: 'tres', readOnly: false },
+        ],
       };
-      const expected: Array<{ value: string; label: string }> = [{ value: '1', label: '1' }];
-      const result = formUtils.getControlOptions(field, undefined, undefined, { label: '2' });
+      const expected: Array<{ value: string; label: string; readOnly: boolean }> = [
+        { value: '1', label: 'uno', readOnly: false },
+        { value: '2', label: 'dos', readOnly: false },
+        { value: '3', label: 'tres', readOnly: false },
+      ];
+      const result = formUtils.getControlOptions(field, undefined, undefined);
       expect(result).toEqual(expected);
     });
   });
@@ -636,23 +748,147 @@ describe('Utils: FormUtils', () => {
       expect(formUtils.isAddressEmpty(control)).toEqual(true);
     });
   });
-  describe('Method: getStartDate(data: any, meta: any): string | null', () => {
-    it('should use minDate', () => {
-      const field = { allowedDateRange: { minDate: '2019-01-26' } };
-      const startDate = formUtils.getStartDate(field);
-      expect(startDate).toBeInstanceOf(Date);
+  describe('Method: inferDateRange()', () => {
+    it('should not set start and end dates', () => {
+      const field = { dataType: 'Date' };
+      const controlConfig = {};
+      formUtils.inferDateRange(controlConfig, field);
+      expect(Object.keys(controlConfig).length).toBe(0);
+      expect(controlConfig.hasOwnProperty('startDate')).toBe(false);
+      expect(controlConfig.hasOwnProperty('endDate')).toBe(false);
+      expect(controlConfig.hasOwnProperty('disabledDateMessage')).toBe(false);
     });
-    it('should use minOffset', () => {
-      const field = { allowedDateRange: { minOffset: 1 } };
-      const startDate = formUtils.getStartDate(field);
-      expect(startDate).toBeInstanceOf(Date);
+    it('should set start and end dates', () => {
+      const field = { dataType: 'Date', allowedDateRange: { minDate: '2021-01-01', maxDate: '2021-12-31' } };
+      const controlConfig: NovoControlConfig = {};
+      formUtils.inferDateRange(controlConfig, field);
+      expect(Object.keys(controlConfig).length).toBeGreaterThan(0);
+      expect(controlConfig.hasOwnProperty('startDate')).toBe(true);
+      expect(controlConfig.hasOwnProperty('endDate')).toBe(true);
+      expect(controlConfig.hasOwnProperty('disabledDateMessage')).toBe(true);
+    });
+    it('should set start date only when just minOffset is passed', () => {
+      const field = { dataType: 'Date', allowedDateRange: { minOffset: 1 } };
+      const controlConfig: NovoControlConfig = {};
+      formUtils.inferDateRange(controlConfig, field);
+      expect(Object.keys(controlConfig).length).toBeGreaterThan(0);
+      expect(controlConfig.hasOwnProperty('startDate')).toBe(true);
+      expect(controlConfig.startDate).toBeDefined;
+      expect(controlConfig.hasOwnProperty('endDate')).toBe(true);
+      expect(controlConfig.endDate).not.toBeDefined;
+      expect(controlConfig.hasOwnProperty('disabledDateMessage')).toBe(true);
+      expect(controlConfig.disabledDateMessage).not.toBeDefined;
+    });
+    it('should set start date only when just minDate is passed', () => {
+      const field = { dataType: 'Date', allowedDateRange: { minDate: '2021-01-01' } };
+      const controlConfig: NovoControlConfig = {};
+      formUtils.inferDateRange(controlConfig, field);
+      expect(Object.keys(controlConfig).length).toBeGreaterThan(0);
+      expect(controlConfig.hasOwnProperty('startDate')).toBe(true);
+      expect(controlConfig.startDate).toBeDefined;
+      expect(controlConfig.hasOwnProperty('endDate')).toBe(true);
+      expect(controlConfig.endDate).not.toBeDefined;
+      expect(controlConfig.hasOwnProperty('disabledDateMessage')).toBe(true);
+      expect(controlConfig.disabledDateMessage).not.toBeDefined;
+    });
+    it('should set end date only when just maxOffset is passed', () => {
+      const field = { dataType: 'Date', allowedDateRange: { maxOffset: 1 } };
+      const controlConfig: NovoControlConfig = {};
+      formUtils.inferDateRange(controlConfig, field);
+      expect(Object.keys(controlConfig).length).toBeGreaterThan(0);
+      expect(controlConfig.hasOwnProperty('startDate')).toBe(true);
+      expect(controlConfig.startDate).not.toBeDefined;
+      expect(controlConfig.hasOwnProperty('endDate')).toBe(true);
+      expect(controlConfig.endDate).toBeDefined;
+      expect(controlConfig.hasOwnProperty('disabledDateMessage')).toBe(true);
+      expect(controlConfig.disabledDateMessage).not.toBeDefined;
+    });
+    it('should set end date only when just maxOffset is passed', () => {
+      const field = { dataType: 'Date', allowedDateRange: { maxDate: '2021-01-01' } };
+      const controlConfig: NovoControlConfig = {};
+      formUtils.inferDateRange(controlConfig, field);
+      expect(Object.keys(controlConfig).length).toBeGreaterThan(0);
+      expect(controlConfig.hasOwnProperty('startDate')).toBe(true);
+      expect(controlConfig.startDate).not.toBeDefined;
+      expect(controlConfig.hasOwnProperty('endDate')).toBe(true);
+      expect(controlConfig.endDate).toBeDefined;
+      expect(controlConfig.hasOwnProperty('disabledDateMessage')).toBe(true);
+      expect(controlConfig.disabledDateMessage).not.toBeDefined;
     });
   });
-  describe('Method: inferStartDate()', () => {
-    it('should return Date', () => {
-      const field = { dataType: 'Date', allowedDateRange: { minOffset: 1 } };
-      const startDate = formUtils.inferStartDate({}, field);
-      expect(startDate).toBeInstanceOf(Date);
+  describe('Method: inflateEmbeddedProperties()', () => {
+    it('should inflate embedded properties', () => {
+      const data = { property1: 'value1', 'property2.property1': 'value2' };
+      const returnData = formUtils.inflateEmbeddedProperties(data);
+      expect(JSON.stringify(returnData)).not.toContain('property2.property1');
+      expect(returnData.property2.property1).toBeDefined();
+    });
+    it('should not do anything if there are not embedded values', () => {
+      const data = { property1: 'value1', property2: 'value2' };
+      const returnData = formUtils.inflateEmbeddedProperties(data);
+      expect(returnData).toBe(data);
+    });
+    it('should handle null', () => {
+      const returnData = formUtils.inflateEmbeddedProperties(null);
+      expect(returnData).toBeNull();
+    });
+    it('should handle undefined', () => {
+      const returnData = formUtils.inflateEmbeddedProperties();
+      expect(returnData).toBeUndefined();
+    });
+    it('should handle empty object', () => {
+      const returnData = formUtils.inflateEmbeddedProperties({});
+      expect(returnData).toStrictEqual({});
+    });
+  });
+  describe('Method: getEmbeddedFields(subheader)', () => {
+    it('should be defined', () => {
+      expect(formUtils.getEmbeddedFields).toBeDefined();
+      const field = {
+        name: 'embeddedField',
+        associatedEntity: {
+          fields: [],
+        },
+      };
+      formUtils.getEmbeddedFields(field);
+    });
+    it('should add field name to associated entity fields name', () => {
+      const field = {
+        name: 'embeddedField',
+        associatedEntity: {
+          fields: [
+            {
+              name: 'field1',
+            },
+            {
+              name: 'field2',
+            },
+          ],
+        },
+      };
+      const embeddedfields = formUtils.getEmbeddedFields(field);
+      expect(embeddedfields.every((f) => f.name.startsWith(`embeddedField.`))).toBeTruthy();
+      expect(embeddedfields[0].name).toBe(`embeddedField.field1`);
+      expect(embeddedfields[1].name).toBe(`embeddedField.field2`);
+    });
+    it('should not add field name to associated entity fields name if already there', () => {
+      const field = {
+        name: 'embeddedField',
+        associatedEntity: {
+          fields: [
+            {
+              name: 'embeddedField.field1',
+            },
+            {
+              name: 'embeddedField.field2',
+            },
+          ],
+        },
+      };
+      const embeddedfields = formUtils.getEmbeddedFields(field);
+      expect(embeddedfields.every((f) => f.name.startsWith(`embeddedField.`))).toBeTruthy();
+      expect(embeddedfields[0].name).toBe(`embeddedField.field1`);
+      expect(embeddedfields[1].name).toBe(`embeddedField.field2`);
     });
   });
 });

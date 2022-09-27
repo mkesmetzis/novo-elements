@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 // Vendor
-import { FormUtils, TextBoxControl, FieldInteractionApi } from 'novo-elements';
+import { FieldInteractionApi, FormUtils, TextBoxControl } from 'novo-elements';
 
 /**
  * @title Fi Globals Example
@@ -15,7 +15,7 @@ export class FiGlobalsExample {
   public controls: any = {};
 
   constructor(private formUtils: FormUtils) {
-    let globalsFunction = (API: FieldInteractionApi) => {
+    const globalsFunction = (API: FieldInteractionApi) => {
       console.log('[FieldInteractionDemo] - globalsFunction'); // tslint:disable-line
       API.setProperty(API.getActiveKey(), 'label', `${API.getProperty(API.getActiveKey(), 'label')} -- ${API.globals.TEST}`);
     };

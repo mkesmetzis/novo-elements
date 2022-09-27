@@ -1,6 +1,6 @@
 // NG2
-import { Component, Input, Output, ViewChild, EventEmitter, NgZone, forwardRef, AfterViewInit, OnDestroy } from '@angular/core';
-import { NG_VALUE_ACCESSOR, ControlValueAccessor } from '@angular/forms';
+import { AfterViewInit, Component, EventEmitter, forwardRef, Input, NgZone, OnDestroy, Output, ViewChild } from '@angular/core';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 // Value accessor for the component (supports ngModel)
 const CKEDITOR_CONTROL_VALUE_ACCESSOR = {
@@ -10,6 +10,11 @@ const CKEDITOR_CONTROL_VALUE_ACCESSOR = {
 };
 
 declare var CKEDITOR: any;
+declare global {
+  interface Window {
+    CKEDITOR: any;
+  }
+}
 
 /**
  * CKEditor component
@@ -86,7 +91,7 @@ export class NovoCKEditorElement implements OnDestroy, AfterViewInit, ControlVal
   }
 
   ngAfterViewInit() {
-    let config = this.config || this.getBaseConfig();
+    const config = Object.assign(this.getBaseConfig(), this.config);
     if (this.startupFocus) {
       config.startupFocus = true;
     }
@@ -126,7 +131,7 @@ export class NovoCKEditorElement implements OnDestroy, AfterViewInit, ControlVal
     // CKEditor change event
     this.instance.on('change', () => {
       this.onTouched();
-      let value = this.instance.getData();
+      const value = this.instance.getData();
 
       // Debounce update
       if (this.debounce) {
@@ -136,7 +141,7 @@ export class NovoCKEditorElement implements OnDestroy, AfterViewInit, ControlVal
         this.debounceTimeout = setTimeout(() => {
           this.updateValue(value);
           this.debounceTimeout = null;
-        }, parseInt(this.debounce));
+        }, parseInt(this.debounce, 10));
       } else {
         this.updateValue(value);
       }
@@ -155,9 +160,10 @@ export class NovoCKEditorElement implements OnDestroy, AfterViewInit, ControlVal
     });
   }
 
-  getBaseConfig() {
+  getBaseConfig(): { [key: string]: any } {
     const baseConfig = {
       enterMode: CKEDITOR.ENTER_BR,
+      entities: false,
       shiftEnterMode: CKEDITOR.ENTER_P,
       disableNativeSpellChecker: false,
       removePlugins: 'liststyle,tabletools,contextmenu', // allows browser based spell checking
@@ -257,7 +263,7 @@ export class NovoCKEditorElement implements OnDestroy, AfterViewInit, ControlVal
   }
 
   insertText(text) {
-    let trimmedText = text.trim();
+    const trimmedText = text.trim();
     this.instance.insertText(trimmedText);
   }
 }

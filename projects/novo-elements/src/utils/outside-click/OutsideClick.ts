@@ -1,11 +1,12 @@
 // NG2
-import { EventEmitter, ElementRef, OnDestroy } from '@angular/core';
+import { ElementRef, EventEmitter, Injectable, OnDestroy } from '@angular/core';
 // APP
 import { Helpers } from '../Helpers';
 
 /**
  * Outside click helper, makes to set the element as inactive when clicking outside of it
  */
+@Injectable()
 export class OutsideClick implements OnDestroy {
   element: ElementRef;
   otherElement: ElementRef;
@@ -30,8 +31,6 @@ export class OutsideClick implements OnDestroy {
 
   /**
    * Toggles the element as active and adds/removes the outside click handler
-   * @param event
-   * @param forceValue
    */
   public toggleActive(event?: MouseEvent, forceValue?: boolean): void {
     // Reverse the active property (if forceValue, use that)
@@ -48,7 +47,6 @@ export class OutsideClick implements OnDestroy {
 
   /**
    * When clicking outside, checks the element and closes if outside
-   * @param event
    */
   public handleOutsideClick(event: MouseEvent): void {
     // If the elements doesn't contain the target element, it is an outside click

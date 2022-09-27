@@ -1,15 +1,13 @@
 // NG2
-import { Component, ElementRef, ChangeDetectorRef } from '@angular/core';
-// APP
-import { BasePickerResults } from '../base-picker-results/BasePickerResults';
-import { Helpers } from '../../../../utils/Helpers';
-import { NovoLabelService } from '../../../../services/novo-label-service';
+import { ChangeDetectorRef, Component, ElementRef } from '@angular/core';
 // Vendor
 import { from, Observable } from 'rxjs';
+import { NovoLabelService } from '../../../../services/novo-label-service';
+import { Helpers } from '../../../../utils/Helpers';
+// APP
+import { BasePickerResults } from '../base-picker-results/BasePickerResults';
 
 /**
- * @name: ChecklistPickerResults
- *
  * @description This is the actual list of matches that gets injected into the DOM.
  */
 @Component({
@@ -54,7 +52,7 @@ export class ChecklistPickerResults extends BasePickerResults {
   }
 
   search(): Observable<any> {
-    let options = this.config.options;
+    const options = this.config.options;
     // only set this the first time
     return from(
       new Promise((resolve, reject) => {
@@ -79,7 +77,6 @@ export class ChecklistPickerResults extends BasePickerResults {
   }
 
   /**
-   * @name filterData=
    * @param matches - Collection of objects=
    *
    * @description This function loops through the picker options and creates a filtered list of objects that contain
@@ -88,10 +85,8 @@ export class ChecklistPickerResults extends BasePickerResults {
   filterData(matches): any {
     if (this.term && matches) {
       this.filteredMatches = matches.map((section) => {
-        let items = section.originalData.filter((match) => {
-          return ~String(match.label)
-            .toLowerCase()
-            .indexOf(this.term.toLowerCase());
+        const items = section.originalData.filter((match) => {
+          return ~String(match.label).toLowerCase().indexOf(this.term.toLowerCase());
         });
         section.data = items;
         return section;
@@ -107,13 +102,6 @@ export class ChecklistPickerResults extends BasePickerResults {
     return matches;
   }
 
-  /**
-   * @name selectMatch
-   * @param event
-   * @param item
-   *
-   * @description
-   */
   selectMatch(event, item) {
     Helpers.swallowEvent(event);
     if (item.indeterminate) {
@@ -123,7 +111,7 @@ export class ChecklistPickerResults extends BasePickerResults {
       item.checked = !item.checked;
     }
 
-    let selected = this.activeMatch;
+    const selected = this.activeMatch;
     if (selected) {
       this.parent.value = selected;
     }

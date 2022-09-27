@@ -36,7 +36,7 @@ blur -- gets fired when the field loses focus
 
 The script function represents the function that will be fired for the event, you can see examples of these below.
 
-Lastly, 'invokeOnInit' will also trigger the Field Interaction when the form is created as well.
+Lastly, 'invokeOnInit' will also trigger the Field Interaction when the form is created as well. A script can check `API.isInvokedOnInit` to determine if the current call is due to initialization or due to a user change. 
 
 ##### Getting Current Context
 
@@ -107,6 +107,12 @@ You have full control over the control, you can modify the options array of stat
 
 <code-example example="fi-modify-options"></code-example>
 
+##### Modifying Config on Static Pickers / Selects to mimic an Entity Picker
+
+You can modify a picker added to a form via field interactions to look like an entity picker!
+
+<code-example example="fi-modify-added-picker"></code-example>
+
 ##### Using Globals
 
 Using the config from above, you can figure the API to have a set of global variables that you can key off of inside your field interactions
@@ -139,3 +145,14 @@ You are able to dynamically change a field's tooltip.
 
 <code-example example="fi-tooltip"></code-example>
 
+##### Modify Description
+
+You are able to dynamically change the description of a field, potentially adding in custom HTML.
+
+<code-example example="fi-description"></code-example>
+
+##### Interacting with Nested Forms
+
+Field Interactions can navigate nested forms to interact with parent and child forms. This example uses the Form Group component which contains an array of nested forms that are kept in sync by field interactions.
+
+<code-example example="fi-nested"></code-example>

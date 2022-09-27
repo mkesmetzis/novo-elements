@@ -1,23 +1,23 @@
 // NG2
-import { Component, Input, OnInit, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input, OnInit } from '@angular/core';
 import { Helpers } from '../../utils/Helpers';
 
 @Component({
   selector: 'novo-entity-list',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-        <div *ngFor="let entity of data.data" class="entity">
-            <a *ngIf="entity.isLinkable" (click)="openLink(entity)">
-                <i class="bhi-circle {{ entity.class }}"></i>{{ entity | render : metaDisplay }}
-            </a>
-            <span *ngIf="!entity.isLinkable && entity.personSubtype">
-                <i class="bhi-circle {{ entity.class }}"></i>{{ entity | render : metaDisplay }}
-            </span>
-            <span *ngIf="!entity.isLinkable && !entity.personSubtype">
-                {{ entity | render : metaDisplay }}
-            </span>
-        </div>
-    `,
+    <div *ngFor="let entity of data.data" class="entity">
+      <a *ngIf="entity.isLinkable" (click)="openLink(entity)">
+        <i class="bhi-circle {{ entity.class }}"></i>{{ entity | render: metaDisplay }}
+      </a>
+      <span *ngIf="!entity.isLinkable && entity.personSubtype">
+        <i class="bhi-circle {{ entity.class }}"></i>{{ entity | render: metaDisplay }}
+      </span>
+      <span *ngIf="!entity.isLinkable && !entity.personSubtype">
+        {{ entity | render: metaDisplay }}
+      </span>
+    </div>
+  `,
 })
 export class EntityList implements OnInit {
   @Input()
@@ -66,7 +66,7 @@ export class EntityList implements OnInit {
     this.metaDisplay = Helpers.deepClone(this.meta);
     this.metaDisplay.type = 'TO_ONE';
     this.baseEntity = this.meta.associatedEntity.entity;
-    for (let entity of this.data.data) {
+    for (const entity of this.data.data) {
       entity.isLinkable = this.isLinkable(entity);
       entity.class = this.getClass(entity);
     }

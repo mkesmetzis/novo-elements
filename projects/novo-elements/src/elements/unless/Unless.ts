@@ -10,7 +10,7 @@ export class Unless {
   permissions: string = '';
   isDisplayed: boolean = false;
 
-  constructor(private templateRef: TemplateRef<any>, private viewContainer: ViewContainerRef, private security: Security) {
+  constructor(public templateRef: TemplateRef<any>, public viewContainer: ViewContainerRef, public security: Security) {
     this.security.subscribe(this.check.bind(this));
   }
 
@@ -23,8 +23,8 @@ export class Unless {
   check(): void {
     let display: boolean = false;
     if (~this.permissions.indexOf('||')) {
-      let ps: any = this.permissions.split('||');
-      for (let p of ps) {
+      const ps: any = this.permissions.split('||');
+      for (const p of ps) {
         if (this.security.has(p.trim())) {
           display = true;
         }

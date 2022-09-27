@@ -1,9 +1,9 @@
 // App
-import { NovoFormGroup } from './NovoFormGroup';
 import { NovoFormControl } from './NovoFormControl';
+import { NovoFormGroup } from './NovoFormGroup';
 
 describe('Elements: NovoFormGroup', () => {
-  let component = new NovoFormGroup({});
+  const component = new NovoFormGroup({});
 
   describe('Method: enableAllControls()', () => {
     it('should enable all controls', () => {
@@ -11,12 +11,12 @@ describe('Elements: NovoFormGroup', () => {
         firstName: new NovoFormControl('John', {}),
         lastName: new NovoFormControl('Doe', {}),
       };
-      for (let key in component.controls) {
-        spyOn(component.controls[key], 'enable');
+      for (const key in component.controls) {
+        jest.spyOn(component.controls[key], 'enable');
         (component.controls[key] as NovoFormControl).readOnly = true;
       }
       component.enableAllControls();
-      for (let key in component.controls) {
+      for (const key in component.controls) {
         expect((component.controls[key] as NovoFormControl).readOnly).toEqual(false);
         expect((component.controls[key] as NovoFormControl).enable).toHaveBeenCalled();
       }
@@ -29,12 +29,12 @@ describe('Elements: NovoFormGroup', () => {
         firstName: new NovoFormControl('John', {}),
         lastName: new NovoFormControl('Doe', {}),
       };
-      for (let key in component.controls) {
-        spyOn(component.controls[key], 'disable');
+      for (const key in component.controls) {
+        jest.spyOn(component.controls[key], 'disable');
         (component.controls[key] as NovoFormControl).readOnly = false;
       }
       component.disableAllControls();
-      for (let key in component.controls) {
+      for (const key in component.controls) {
         expect((component.controls[key] as NovoFormControl).readOnly).toEqual(true);
         expect((component.controls[key] as NovoFormControl).disable).toHaveBeenCalled();
       }

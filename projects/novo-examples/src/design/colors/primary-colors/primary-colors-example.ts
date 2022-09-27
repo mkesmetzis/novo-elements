@@ -16,7 +16,7 @@ export class PrimaryColorsExample {
     {
       name: 'navigation',
       variables: ['navigation'],
-      hex: '2F384F',
+      hex: '202945',
     },
     {
       name: 'positive',
@@ -63,6 +63,36 @@ export class PrimaryColorsExample {
       variables: ['empty'],
       hex: 'CCCDCC',
     },
+    {
+      name: 'sand',
+      variables: ['sand'],
+      hex: 'F4F4F4',
+    },
+    {
+      name: 'silver',
+      variables: ['silver'],
+      hex: 'E2E2E2',
+    },
+    {
+      name: 'stone',
+      variables: ['stone'],
+      hex: 'BEBEBE',
+    },
+    {
+      name: 'ash',
+      variables: ['ash'],
+      hex: 'A0A0A0',
+    },
+    {
+      name: 'slate',
+      variables: ['slate'],
+      hex: '707070',
+    },
+    {
+      name: 'charcoal',
+      variables: ['charcoal'],
+      hex: '282828',
+    },
   ];
   options: any;
 
@@ -70,9 +100,9 @@ export class PrimaryColorsExample {
 
   copyLink(color) {
     // Create dom element to copy from
-    let copyFrom = document.createElement('textarea');
+    const copyFrom = document.createElement('textarea');
     copyFrom.textContent = `#${color.hex}`;
-    let body = document.getElementsByTagName('body')[0];
+    const body = document.getElementsByTagName('body')[0];
     body.appendChild(copyFrom);
     copyFrom.select();
     // Copy text

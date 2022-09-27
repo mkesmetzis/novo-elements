@@ -1,25 +1,25 @@
 // NG
-import { AfterContentInit, Component, Input, OnInit, ContentChildren, QueryList } from '@angular/core';
+import { AfterContentInit, Component, ContentChildren, Input, OnInit, QueryList } from '@angular/core';
 // App
-import { NovoFormGroup } from './FormInterfaces';
+import { NovoTemplateService } from '../../services/template/NovoTemplateService';
 import { Helpers } from '../../utils/Helpers';
 import { NovoTemplate } from '../common/novo-template/novo-template.directive';
-import { NovoTemplateService } from '../../services/template/NovoTemplateService';
+import { NovoFormGroup } from './NovoFormGroup';
 
 @Component({
   selector: 'novo-form',
   template: `
-        <novo-control-templates></novo-control-templates>
-        <div class="novo-form-container">
-            <header *ngIf="!hideHeader">
-                <ng-content select="form-title"></ng-content>
-                <ng-content select="form-subtitle"></ng-content>
-            </header>
-            <form class="novo-form" [formGroup]="form">
-                <ng-content></ng-content>
-            </form>
-        </div>
-    `,
+    <novo-control-templates></novo-control-templates>
+    <div class="novo-form-container">
+      <header *ngIf="!hideHeader">
+        <ng-content select="form-title"></ng-content>
+        <ng-content select="form-subtitle"></ng-content>
+      </header>
+      <form class="novo-form" [formGroup]="form">
+        <ng-content></ng-content>
+      </form>
+    </div>
+  `,
   providers: [NovoTemplateService],
 })
 export class NovoFormElement implements AfterContentInit, OnInit {
@@ -74,7 +74,7 @@ export class NovoFormElement implements AfterContentInit, OnInit {
       }
 
       // Hide required fields that have been successfully filled out
-      if (hideRequiredWithValue && !Helpers.isBlank(this.form.value[key])) {
+      if (hideRequiredWithValue && !Helpers.isBlank(this.form.getRawValue()[key])) {
         this.form.controls[key].hidden = true;
       }
 
@@ -90,8 +90,8 @@ export class NovoFormElement implements AfterContentInit, OnInit {
 
   public forceValidation(): void {
     Object.keys(this.form.controls).forEach((key: string) => {
-      let control: any = this.form.controls[key];
-      if (control.required && Helpers.isBlank(this.form.value[control.key])) {
+      const control: any = this.form.controls[key];
+      if (control.required && Helpers.isBlank(this.form.getRawValue()[control.key])) {
         control.markAsDirty();
         control.markAsTouched();
       }

@@ -1,4 +1,4 @@
-import { animate, animateChild, group, state, style, transition, trigger, query, AnimationTriggerMetadata } from '@angular/animations';
+import { animate, animateChild, AnimationTriggerMetadata, group, query, state, style, transition, trigger } from '@angular/animations';
 
 /** Time and timing curve for expansion panel animations. */
 export const EXPANSION_PANEL_ANIMATION_TIMING = '225ms cubic-bezier(0.4,0.0,0.2,1)';
@@ -12,7 +12,7 @@ export const novoExpansionAnimations: {
   /** Animation that rotates the indicator arrow. */
   indicatorRotate: trigger('indicatorRotate', [
     state('collapsed', style({ transform: 'rotate(0deg)' })),
-    state('expanded', style({ transform: 'rotate(180deg)' })),
+    state('expanded', style({ transform: 'rotate(90deg)' })),
     transition('expanded <=> collapsed', animate(EXPANSION_PANEL_ANIMATION_TIMING)),
   ]),
 

@@ -1,12 +1,12 @@
 // App
-import { NovoToastService } from './ToastService';
 import { ComponentUtils } from '../../utils/component-utils/ComponentUtils';
+import { NovoToastService } from './ToastService';
 
 describe('Elements: NovoToastService', () => {
   describe('Service: ', () => {
-    let resolver: any = null;
-    let utils = new ComponentUtils(resolver);
-    let service = new NovoToastService(utils);
+    const resolver: any = null;
+    const utils = new ComponentUtils(resolver);
+    const service = new NovoToastService(utils);
 
     it('should be defined.', () => {
       expect(service).toBeDefined();
@@ -18,42 +18,39 @@ describe('Elements: NovoToastService', () => {
       });
 
       it('should call setToastOnSession.', () => {
-        let options = {
+        const options = {
           isCloseable: false,
           hideDelay: 3000,
           message: 'test message',
           header: 'test header',
         };
-        spyOn(service, 'setToastOnSession');
-
+        let spy = jest.spyOn(service, 'setToastOnSession');
         service.handleAlert({}, options);
-
-        expect(service.setToastOnSession).toHaveBeenCalledWith({}, options);
+        expect(spy).toHaveBeenLastCalledWith(expect.any(Object), options);
+        spy.mockReset();
       });
 
       it('should call toastTimer if not isCloseable.', () => {
-        let toast = {
+        const toast = {
           isCloseable: false,
         };
-        spyOn(service, 'toastTimer');
-
+        let spy = jest.spyOn(service, 'toastTimer');
         service.handleAlert(toast, {});
-
-        expect(service.toastTimer).toHaveBeenCalledWith(toast);
+        expect(spy).toHaveBeenCalledWith(toast);
+        spy.mockReset();
       });
 
       it('should NOT call toastTimer if isCloseable.', () => {
-        let toast = {
+        const toast = {
           isCloseable: true,
         };
-        let options = {
+        const options = {
           isCloseable: true,
         };
-        spyOn(service, 'toastTimer');
-
+        let spy = jest.spyOn(service, 'toastTimer');
         service.handleAlert(toast, options);
-
-        expect(service.toastTimer).not.toHaveBeenCalled();
+        expect(spy).not.toHaveBeenCalled();
+        spy.mockReset();
       });
     });
 
@@ -63,21 +60,21 @@ describe('Elements: NovoToastService', () => {
       });
 
       it('should return false is toast.show = false.', () => {
-        let toast = {
+        const toast = {
           show: false,
         };
 
-        let result = service.isVisible(toast);
+        const result = service.isVisible(toast);
 
         expect(result).toBeFalsy();
       });
 
       it('should return true is toast.show = true.', () => {
-        let toast = {
+        const toast = {
           show: true,
         };
 
-        let result = service.isVisible(toast);
+        const result = service.isVisible(toast);
 
         expect(result).toBeTruthy();
       });

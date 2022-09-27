@@ -1,18 +1,18 @@
 // NG2
 import { Component, ElementRef } from '@angular/core';
-import { TestBed, async } from '@angular/core/testing';
+import { async, TestBed } from '@angular/core/testing';
 // App
 import { ThOrderable } from './ThOrderable';
 
 @Component({
   selector: 'test-component',
   template: `
-        <table>
-            <tr>
-                <th novoThOrderable="right"></th>
-            </tr>
-        </table>
-    `,
+    <table>
+      <tr>
+        <th novoThOrderable="right"></th>
+      </tr>
+    </table>
+  `,
 })
 class TestComponent {}
 
@@ -34,8 +34,8 @@ describe('Elements: ThOrderable', () => {
     });
   });
   describe('Class: ', () => {
-    let mockElement = new ElementRef(document.createElement('div'));
-    let subject = new ThOrderable(mockElement);
+    const mockElement = new ElementRef(document.createElement('div')) as any;
+    const subject = new ThOrderable(mockElement);
     mockElement.nativeElement = {
       parentNode: {
         children: [mockElement],
@@ -63,18 +63,18 @@ describe('Elements: ThOrderable', () => {
     describe('Method: deleteColumns()', () => {
       it('should delete rows from the table', () => {
         expect(subject.deleteColumns).toBeDefined();
-        let mockTable = {
+        const mockTable = {
           rows: [],
           deleteRow: () => {},
         };
-        spyOn(mockTable, 'deleteRow').and.callThrough();
+        jest.spyOn(mockTable, 'deleteRow');
         subject.deleteColumns(mockTable);
       });
     });
 
     describe('Method: findTable()', () => {
       it('should be defined', () => {
-        let mockHTMLElement = document.createElement('div');
+        const mockHTMLElement = document.createElement('div');
         expect(subject.findTable).toBeDefined();
         subject.findTable(mockHTMLElement);
       });
@@ -90,7 +90,7 @@ describe('Elements: ThOrderable', () => {
     describe('Method: onDragEnd()', () => {
       it('should be defined', () => {
         expect(subject.onDragEnd).toBeDefined();
-        spyOn(document.body, 'removeChild').and.callFake(() => {});
+        jest.spyOn(document.body, 'removeChild').mockImplementation(() => null);
         subject.onDragEnd();
       });
     });

@@ -1,6 +1,4 @@
-import { ChangeDetectionStrategy, Component, Input, Inject, forwardRef } from '@angular/core';
-import { NovoStepper } from './stepper.component';
-import { NovoStepHeader } from './step-header.component';
+import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 
 @Component({
   selector: 'novo-step-status',
@@ -16,8 +14,5 @@ export class NovoStepStatus {
   @Input()
   state: string;
 
-  constructor(
-    @Inject(forwardRef(() => NovoStepper)) stepper: NovoStepper,
-    @Inject(forwardRef(() => NovoStepHeader)) step: NovoStepHeader,
-  ) {}
+  constructor() {}
 }

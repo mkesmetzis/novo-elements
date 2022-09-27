@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 // Vendor
-import { FormUtils, TextBoxControl, FieldInteractionApi, TilesControl } from 'novo-elements';
+import { FieldInteractionApi, FormUtils, TextBoxControl, TilesControl } from 'novo-elements';
 
 /**
  * @title Fi Tooltip Example
@@ -15,12 +15,12 @@ export class FiTooltipExample {
   public controls: any = {};
 
   constructor(private formUtils: FormUtils) {
-    let tooltipFunction = (API: FieldInteractionApi) => {
+    const tooltipFunction = (API: FieldInteractionApi) => {
       console.log('[FieldInteractionDemo] - tooltipFunction'); // tslint:disable-line
       API.setTooltip(API.getActiveKey(), API.getActiveValue());
     };
 
-    let tooltipUpdateFunction = (API: FieldInteractionApi) => {
+    const tooltipUpdateFunction = (API: FieldInteractionApi) => {
       console.log('[FieldInteractionDemo] - tooltipUpdateFunction'); // tslint:disable-line
       API.getControl(this.controls.tooltipControl.key).tooltipSize = API.getValue(this.controls.tooltipSizeControl.key);
       API.getControl(this.controls.tooltipControl.key).tooltipPreline = API.getValue(this.controls.tooltipPrelineControl.key);
@@ -39,7 +39,11 @@ export class FiTooltipExample {
       key: 'tooltipSize',
       label: 'Tooltip Size',
       description: 'Changing me will set a fixed width on the tooltip',
-      options: [{ value: 'small', label: 'Small' }, { value: 'medium', label: 'Medium' }, { value: 'large', label: 'Large' }],
+      options: [
+        { value: 'small', label: 'Small' },
+        { value: 'medium', label: 'Medium' },
+        { value: 'large', label: 'Large' },
+      ],
       interactions: [{ event: 'change', script: tooltipUpdateFunction }],
     });
 
@@ -47,7 +51,10 @@ export class FiTooltipExample {
       key: 'tooltipPreline',
       label: 'Tooltip Multiline',
       description: 'Should the tooltip be multiple lines tall or all on one line?',
-      options: [{ value: true, label: 'Yes' }, { value: false, label: 'No' }],
+      options: [
+        { value: true, label: 'Yes' },
+        { value: false, label: 'No' },
+      ],
       interactions: [{ event: 'change', script: tooltipUpdateFunction }],
     });
 

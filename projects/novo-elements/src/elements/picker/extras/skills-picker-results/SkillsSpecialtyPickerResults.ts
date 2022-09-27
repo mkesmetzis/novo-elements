@@ -1,8 +1,8 @@
 // NG2
-import { Component, ElementRef, ChangeDetectorRef, HostBinding } from '@angular/core';
+import { ChangeDetectorRef, Component, ElementRef, HostBinding } from '@angular/core';
+import { NovoLabelService } from '../../../../services/novo-label-service';
 // App
 import { BasePickerResults } from '../base-picker-results/BasePickerResults';
-import { NovoLabelService } from '../../../../services/novo-label-service';
 
 @Component({
   selector: 'skill-specialty-picker-results',
@@ -17,10 +17,10 @@ import { NovoLabelService } from '../../../../services/novo-label-service';
         [class.disabled]="preselected(match)"
       >
         <item-content>
-          <h6><span [innerHtml]="highlight(match.label, term)"></span></h6>
+          <h6><span [innerHtml]="match.label | highlight:term"></span></h6>
           <div class="category">
             <i class="bhi-category-tags"></i
-            ><span [innerHtml]="highlight(match.data.categories || match.data.parentCategory.name, term)"></span>
+            ><span [innerHtml]="match.data.categories || match.data.parentCategory.name | highlight:term"></span>
           </div>
         </item-content>
       </novo-list-item>

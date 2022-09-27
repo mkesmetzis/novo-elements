@@ -1,7 +1,6 @@
 import { Component } from '@angular/core';
-
 // Vendor
-import { FormUtils, FileControl, NovoFormGroup } from 'novo-elements';
+import { FileControl, FormUtils, NovoFormGroup } from 'novo-elements';
 
 /**
  * @title File Input Controls Example
@@ -88,12 +87,16 @@ export class FileInputControlsExample {
 
   public checkFileSize(fileList): boolean {
     const maxSizeKb: number = 5120; // (5 MB in KB)
-    for (let file of fileList) {
+    for (const file of fileList) {
       if (file.size > maxSizeKb * 1024) {
         this.message = 'File is bigger than the allowed 5MB';
         return false;
       }
     }
     return true;
+  }
+
+  public clearFileLists(): void {
+    this.fileForm.patchValue({file: null, files: null, mixDeleteFiles: null});
   }
 }

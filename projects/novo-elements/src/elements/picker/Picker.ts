@@ -1,4 +1,6 @@
 // NG2
+// Vendor
+import { coerceBooleanProperty } from '@angular/cdk/coercion';
 import {
   ChangeDetectorRef,
   Component,
@@ -13,18 +15,15 @@ import {
   ViewContainerRef,
 } from '@angular/core';
 import { NG_VALUE_ACCESSOR } from '@angular/forms';
-// Vendor
-import { coerceBooleanProperty } from '@angular/cdk/coercion';
-import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { fromEvent } from 'rxjs';
-// APP
-import { KeyCodes } from '../../utils/key-codes/KeyCodes';
-import { PickerResults } from './extras/picker-results/PickerResults';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { Key } from '../../utils';
 import { ComponentUtils } from '../../utils/component-utils/ComponentUtils';
 import { Helpers } from '../../utils/Helpers';
-import { NovoOverlayTemplateComponent } from '../overlay/Overlay';
 import { notify } from '../../utils/notifier/notifier.util';
+import { NovoOverlayTemplateComponent } from '../common/overlay/Overlay';
 import { NovoControlConfig } from '../form/FormControls';
+import { PickerResults } from './extras/picker-results/PickerResults';
 
 // Value accessor for the component (supports ngModel)
 const PICKER_VALUE_ACCESSOR = {
@@ -34,8 +33,6 @@ const PICKER_VALUE_ACCESSOR = {
 };
 
 /**
- * @name Picker
- *
  * @description This class is the directive definition of the Picker. If you add and attribute of `picker` to an input,
  * it will create an instance of the picker which wraps the input in all of the picker HTML elements and functionality.
  * Picker should be added as a two-way bound ngModel instance `[(picker)]=""` in order to have the picker options
@@ -78,7 +75,7 @@ const PICKER_VALUE_ACCESSOR = {
 })
 export class NovoPickerElement implements OnInit {
   // Container for the results
-  @ViewChild('results', { read: ViewContainerRef })
+  @ViewChild('results', { read: ViewContainerRef, static: true })
   results: ViewContainerRef;
 
   @Input()
@@ -136,19 +133,19 @@ export class NovoPickerElement implements OnInit {
   @Output()
   typing: EventEmitter<any> = new EventEmitter();
 
-  @ViewChild(NovoOverlayTemplateComponent)
+  @ViewChild(NovoOverlayTemplateComponent, { static: true })
   public container: NovoOverlayTemplateComponent;
-  @ViewChild('input')
+  @ViewChild('input', { static: true })
   private input: ElementRef;
 
   term: string = '';
   resultsComponent: any;
   popup: ComponentRef<any>;
   _value: any;
-  onModelChange: Function = () => { };
-  onModelTouched: Function = () => { };
+  onModelChange: Function = () => {};
+  onModelTouched: Function = () => {};
 
-  constructor(public element: ElementRef, private componentUtils: ComponentUtils, private ref: ChangeDetectorRef) { }
+  constructor(public element: ElementRef, private componentUtils: ComponentUtils, private ref: ChangeDetectorRef) {}
 
   ngOnInit() {
     if (this.overrideElement) {
@@ -161,20 +158,20 @@ export class NovoPickerElement implements OnInit {
     this.resultsComponent = this.config.resultsTemplate || PickerResults;
     // Get all distinct key up events from the input and only fire if long enough and distinct
     // let input = this.element.nativeElement.querySelector('input');
-    const pasteObserver = fromEvent(this.input.nativeElement, 'paste').pipe(
-      debounceTime(250),
-      distinctUntilChanged(),
+    const pasteObserver = fromEvent(this.input.nativeElement, 'paste').pipe(debounceTime(250), distinctUntilChanged());
+    pasteObserver.subscribe(
+      (event: ClipboardEvent) => this.onDebouncedKeyup(event),
+      (err) => this.hideResults(err),
     );
-    pasteObserver.subscribe((event: ClipboardEvent) => this.onDebouncedKeyup(event), (err) => this.hideResults(err));
-    const keyboardObserver = fromEvent(this.input.nativeElement, 'keyup').pipe(
-      debounceTime(250),
-      distinctUntilChanged(),
+    const keyboardObserver = fromEvent(this.input.nativeElement, 'keyup').pipe(debounceTime(250), distinctUntilChanged());
+    keyboardObserver.subscribe(
+      (event: KeyboardEvent) => this.onDebouncedKeyup(event),
+      (err) => this.hideResults(err),
     );
-    keyboardObserver.subscribe((event: KeyboardEvent) => this.onDebouncedKeyup(event), (err) => this.hideResults(err));
   }
 
-  private onDebouncedKeyup(event: Event) {
-    if ([KeyCodes.ESC, KeyCodes.UP, KeyCodes.DOWN, KeyCodes.ENTER, KeyCodes.TAB].includes(event['keyCode'])) {
+  private onDebouncedKeyup(event: KeyboardEvent | ClipboardEvent) {
+    if ([Key.Escape, Key.ArrowDown, Key.ArrowUp, Key.Enter, Key.Tab].some((key) => key === (event as KeyboardEvent).key)) {
       return;
     }
     this.show((event.target as any).value);
@@ -204,24 +201,24 @@ export class NovoPickerElement implements OnInit {
       return;
     }
     if (this.panelOpen && !this.disablePickerInput) {
-      if (event.keyCode === KeyCodes.ESC || event.keyCode === KeyCodes.TAB) {
+      if (event.key === Key.Escape || event.key === Key.Tab) {
         this.hideResults();
         return;
       }
 
-      if (event.keyCode === KeyCodes.UP) {
+      if (event.key === Key.ArrowUp) {
         this.popup.instance.prevActiveMatch();
         this.ref.markForCheck();
         return;
       }
 
-      if (event.keyCode === KeyCodes.DOWN) {
+      if (event.key === Key.ArrowDown) {
         this.popup.instance.nextActiveMatch();
         this.ref.markForCheck();
         return;
       }
 
-      if (event.keyCode === KeyCodes.ENTER) {
+      if (event.key === Key.Enter) {
         const activeMatch = this.popup.instance.activeMatch;
         if (!this.selected.find((selected) => activeMatch && activeMatch.value && selected.value === activeMatch.value)) {
           this.popup.instance.selectActiveMatch();
@@ -230,11 +227,11 @@ export class NovoPickerElement implements OnInit {
         return;
       }
 
-      if ((event.keyCode === KeyCodes.BACKSPACE || event.keyCode === KeyCodes.DELETE) && !Helpers.isBlank(this._value)) {
+      if ((event.key === Key.Backspace || event.key === Key.Delete) && !Helpers.isBlank(this._value)) {
         this.clearValue(false);
         this.closePanel();
       }
-      if (event.keyCode === KeyCodes.DELETE && Helpers.isBlank(this._value)) {
+      if (event.key === Key.Delete && Helpers.isBlank(this._value)) {
         this.clearValue(true);
       }
     }
@@ -254,7 +251,6 @@ export class NovoPickerElement implements OnInit {
   }
 
   /**
-   * @name onFocus
    * @description When the input's focus event is called this method calls the debounced function that displays the
    * results.
    */

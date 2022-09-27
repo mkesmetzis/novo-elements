@@ -1,22 +1,20 @@
 // NG2
-import { ElementRef, Input, ChangeDetectorRef } from '@angular/core';
-// APP
-import { Helpers } from '../../../../utils/Helpers';
+import { OverlayRef } from '@angular/cdk/overlay';
+import { ChangeDetectorRef, Directive, ElementRef, Input } from '@angular/core';
 // Vendor
 import { from, Observable } from 'rxjs';
-import { OverlayRef } from '@angular/cdk/overlay';
+// APP
+import { Helpers } from '../../../../utils/Helpers';
 import { NovoControlConfig } from '../../../form/controls/BaseControl';
 
 /**
- * @name: PickerResults
- *
  * @description This is the actual list of matches that gets injected into the DOM. It's also the piece that can be
  * overwritten if custom list options are needed.
  */
+@Directive()
 export class BasePickerResults {
   _term: string = '';
   selected: Array<any> = [];
-  @Input() matches: any = [];
   hasError: boolean = false;
   isLoading: boolean = false;
   isStatic: boolean = true;
@@ -32,6 +30,16 @@ export class BasePickerResults {
   optionsFunctionHasChanged: boolean = false;
   private selectingMatches: boolean = false;
   private scrollHandler: any;
+  _matches: Array<any> = [];
+
+  @Input()
+  set matches(m: Array<any>) {
+    this._matches = m;
+  }
+
+  get matches() {
+    return this._matches;
+  }
 
   constructor(element: ElementRef, ref: ChangeDetectorRef) {
     this.element = element;
@@ -40,7 +48,7 @@ export class BasePickerResults {
   }
 
   cleanUp(): void {
-    let element: Element = this.getListElement();
+    const element: Element = this.getListElement();
     if (element && element.hasAttribute('scrollListener')) {
       element.removeAttribute('scrollListener');
       element.removeEventListener('scroll', this.scrollHandler);
@@ -48,10 +56,10 @@ export class BasePickerResults {
   }
 
   onScrollDown(event: WheelEvent) {
-    let element: any = event.target;
+    const element: any = event.target;
     if (element) {
-      let offset = element.offsetHeight + element.scrollTop,
-        bottom = element.scrollHeight - 300;
+      const offset = element.offsetHeight + element.scrollTop;
+      const bottom = element.scrollHeight - 300;
       if (offset >= bottom) {
         event.stopPropagation();
         if (!this.lastPage && !this.isLoading) {
@@ -97,7 +105,7 @@ export class BasePickerResults {
 
   addScrollListener(): void {
     if (this.config.enableInfiniteScroll) {
-      let element: Element = this.getListElement();
+      const element: Element = this.getListElement();
       if (element && !element.hasAttribute('scrollListener')) {
         element.setAttribute('scrollListener', 'true');
         element.addEventListener('scroll', this.scrollHandler);
@@ -143,7 +151,7 @@ export class BasePickerResults {
   }
 
   search(term, mode?): Observable<any> {
-    let options = this.config.options;
+    const options = this.config.options;
     return from(
       new Promise((resolve, reject) => {
         // Check if there is match data
@@ -176,7 +184,7 @@ export class BasePickerResults {
             if (this.config.defaultOptions) {
               this.isStatic = false;
               if (typeof this.config.defaultOptions === 'function') {
-                let defaultOptions = this.config.defaultOptions(term, ++this.page);
+                const defaultOptions = this.config.defaultOptions(term, ++this.page);
                 if (Object.getPrototypeOf(defaultOptions).hasOwnProperty('then')) {
                   defaultOptions.then(this.structureArray.bind(this)).then(resolve, reject);
                 } else {
@@ -207,14 +215,13 @@ export class BasePickerResults {
   }
 
   /**
-   * @name structureArray
    * @param collection - the data once getData resolves it
    *
    * @description This function structures an array of nodes into an array of objects with a
    * 'name' field by default.
    */
   structureArray(collection: any): any {
-    let dataArray = collection.data ? collection.data : collection;
+    const dataArray = collection.data ? collection.data : collection;
     if (dataArray && (typeof dataArray[0] === 'string' || typeof dataArray[0] === 'number')) {
       return collection.map((item) => {
         return {
@@ -228,13 +235,12 @@ export class BasePickerResults {
       if (this.config.valueFormat) {
         value = Helpers.interpolate(this.config.valueFormat, data);
       }
-      let label = this.config.format ? Helpers.interpolate(this.config.format, data) : data.label || String(value);
+      const label = this.config.format ? Helpers.interpolate(this.config.format, data) : data.label || String(value);
       return { value, label, data };
     });
   }
 
   /**
-   * @name filterData=
    * @param matches - Collection of objects=
    *
    * @description This function loops through the picker options and creates a filtered list of objects that contain
@@ -243,9 +249,7 @@ export class BasePickerResults {
   filterData(matches): Array<any> {
     if (this.term && matches) {
       return matches.filter((match) => {
-        return ~String(match.label)
-          .toLowerCase()
-          .indexOf(this.term.toLowerCase());
+        return ~String(match.label).toLowerCase().indexOf(this.term.toLowerCase());
       });
     }
     // Show no recent results template
@@ -253,8 +257,6 @@ export class BasePickerResults {
   }
 
   /**
-   * @name selectActiveMatch
-   *
    * @description This function is called when the user presses the enter key to call the selectMatch method.
    */
   selectActiveMatch() {
@@ -262,24 +264,20 @@ export class BasePickerResults {
   }
 
   /**
-   * @name prevActiveMatch
-   *
    * @description This function sets activeMatch to the match before the current node.
    */
   prevActiveMatch() {
-    let index = this.matches.indexOf(this.activeMatch);
+    const index = this.matches.indexOf(this.activeMatch);
     this.activeMatch = this.matches[index - 1 < 0 ? this.matches.length - 1 : index - 1];
     this.scrollToActive();
     this.ref.markForCheck();
   }
 
   /**
-   * @name nextActiveMatch
-   *
    * @description This function sets activeMatch to the match after the current node.
    */
   nextActiveMatch() {
-    let index = this.matches.indexOf(this.activeMatch);
+    const index = this.matches.indexOf(this.activeMatch);
     this.activeMatch = this.matches[index + 1 > this.matches.length - 1 ? 0 : index + 1];
     this.scrollToActive();
     this.ref.markForCheck();
@@ -298,19 +296,16 @@ export class BasePickerResults {
   }
 
   scrollToActive() {
-    let list = this.getListElement();
-    let items = this.getChildrenOfListElement();
-    let index = this.matches.indexOf(this.activeMatch);
-    let item = items[index];
+    const list = this.getListElement();
+    const items = this.getChildrenOfListElement();
+    const index = this.matches.indexOf(this.activeMatch);
+    const item = items[index];
     if (item) {
       list.scrollTop = item.offsetTop;
     }
   }
 
   /**
-   * @name selectActive
-   * @param match
-   *
    * @description
    */
   selectActive(match) {
@@ -318,9 +313,6 @@ export class BasePickerResults {
   }
 
   /**
-   * @name isActive
-   * @param match
-   *
    * @description
    */
   isActive(match) {
@@ -328,10 +320,6 @@ export class BasePickerResults {
   }
 
   /**
-   * @name selectMatch
-   * @param event
-   * @param item
-   *
    * @description
    */
   selectMatch(event?: any, item?: any) {
@@ -354,9 +342,6 @@ export class BasePickerResults {
   }
 
   /**
-   * @name escapeRegexp
-   * @param queryToEscape
-   *
    * @description This function captures the whole query string and replace it with the string that will be used to
    * match.
    */
@@ -366,11 +351,7 @@ export class BasePickerResults {
   }
 
   /**
-   * @name highlight
-   * @param match
-   * @param query
-   *
-   * @description This function should return a <strong>-tag wrapped HTML string.
+   * @deprecated use highlight pipe
    */
   highlight(match, query) {
     // Replaces the capture string with a the same string inside of a "strong" tag
@@ -378,16 +359,20 @@ export class BasePickerResults {
   }
 
   preselected(match) {
-    if (this.config.preselected) {
-      let preselectedFunc: Function = this.config.preselected;
+    let selected = this.selected;
+    if (this.config && this.config.selected) {
+      selected = [...this.selected, ...this.config.selected];
+    }
+    if (this.config && this.config.preselected) {
+      const preselectedFunc: Function = this.config.preselected;
       return (
-        this.selected.findIndex((item) => {
+        selected.findIndex((item) => {
           return preselectedFunc(match, item);
         }) !== -1
       );
     }
     return (
-      this.selected.findIndex((item) => {
+      selected.findIndex((item) => {
         let isPreselected = false;
         if (item && item.value && match && match.value) {
           if (item.value.id && match.value.id) {

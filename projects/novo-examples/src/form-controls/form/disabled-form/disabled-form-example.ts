@@ -1,7 +1,6 @@
-import { Component, Input } from '@angular/core';
-
+import { Component } from '@angular/core';
 // Vendor
-import { FormUtils, TextBoxControl, CheckboxControl, FileControl, PickerControl } from 'novo-elements';
+import { FormUtils } from 'novo-elements';
 import { MockMetaForDisabledForm } from '../MockMeta';
 
 /**
@@ -24,11 +23,26 @@ export class DisabledFormExample {
 
   constructor(private formUtils: FormUtils) {
     // Disabled Form
-    let disabledOverrides: any = {
+    const disabledOverrides: any = {
       address: {
         readOnly: true,
       },
       textbox: {
+        readOnly: true,
+      },
+      number: {
+        readOnly: true,
+      },
+      year: {
+        readOnly: true,
+      },
+      float: {
+        readOnly: true,
+      },
+      currency: {
+        readOnly: true,
+      },
+      percent: {
         readOnly: true,
       },
       textarea: {
@@ -80,13 +94,13 @@ export class DisabledFormExample {
           {
             label: 'Value',
             data: (item: any): string => {
-              return item.value['value'];
+              return item.value.value;
             },
           },
           {
             label: 'Description',
             data: (item: any): string => {
-              return item.value['description'];
+              return item.value.description;
             },
           },
         ],
@@ -104,6 +118,11 @@ export class DisabledFormExample {
       textbox: 'Disabled TextBox',
       textarea:
         'Disabled TextArea Disabled TextArea Disabled TextArea Disabled TextArea Disabled TextArea Disabled TextArea Disabled TextArea ',
+      number: 42,
+      year: 2000,
+      float: 3.14,
+      currency: 1000000,
+      percent: 1.21,
       select: 'disabledValue',
       checklist: 'Disabled',
       tiles: 'Disabled',

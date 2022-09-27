@@ -1,25 +1,22 @@
-import {
-  ElementRef,
-  Input,
-  Renderer2,
-  HostBinding,
-  Component,
-  OnInit,
-  OnDestroy,
-  ChangeDetectorRef,
-  ChangeDetectionStrategy,
-} from '@angular/core';
 import { CdkCell, CdkColumnDef } from '@angular/cdk/table';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  HostBinding,
+  Inject,
+  Input,
+  OnDestroy,
+  OnInit,
+  Renderer2,
+} from '@angular/core';
 import { Subscription } from 'rxjs';
-
-import { NovoDataTable } from '../data-table.component';
-import { DataTableState } from '../state/data-table-state.service';
+import { NovoDataTableRef, NOVO_DATA_TABLE_REF } from '../data-table.token';
 
 @Component({
   selector: 'novo-data-table-expand-cell',
-  template: `
-    <i class="bhi-next data-table-icon" novo-data-table-expander="true" [class.expanded]="expanded"></i>
-  `,
+  template: ` <i class="bhi-next data-table-icon" novo-data-table-expander="true" [class.expanded]="expanded"></i> `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class NovoDataTableExpandCell<T> extends CdkCell implements OnInit, OnDestroy {
@@ -37,7 +34,7 @@ export class NovoDataTableExpandCell<T> extends CdkCell implements OnInit, OnDes
     public columnDef: CdkColumnDef,
     elementRef: ElementRef,
     renderer: Renderer2,
-    public dataTable: NovoDataTable<T>,
+    @Inject(NOVO_DATA_TABLE_REF) private dataTable: NovoDataTableRef,
     private ref: ChangeDetectorRef,
   ) {
     super(columnDef, elementRef);

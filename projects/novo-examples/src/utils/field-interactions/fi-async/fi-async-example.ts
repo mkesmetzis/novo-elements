@@ -1,7 +1,6 @@
 import { Component } from '@angular/core';
-import { FormUtils, TextBoxControl, FieldInteractionApi } from 'novo-elements';
-import { map } from 'rxjs/operators';
-import { MockMetaHeaders } from '../MockMeta';
+// Vendor
+import { FieldInteractionApi, FormUtils, TextBoxControl } from 'novo-elements';
 
 /**
  * @title Fi Async Example
@@ -16,16 +15,16 @@ export class FiAsyncExample {
   public controls: any = {};
 
   constructor(private formUtils: FormUtils) {
-    let asyncFunction = (API: FieldInteractionApi) => {
+    const asyncFunction = (API: FieldInteractionApi) => {
       console.log('[FieldInteractionDemo] - asyncFunction'); // tslint:disable-line
       if (API.getActiveKey() === 'async1') {
         API.setLoading(API.getActiveKey(), true);
-        setTimeout(function() {
+        setTimeout(function () {
           API.setLoading(API.getActiveKey(), false);
         }, 3000);
       } else {
         API.setLoading(API.getActiveKey(), true);
-        setTimeout(function() {
+        setTimeout(function () {
           API.setLoading(API.getActiveKey(), false);
         }, 15000);
       }

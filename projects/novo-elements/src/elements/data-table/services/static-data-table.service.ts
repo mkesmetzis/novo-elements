@@ -1,7 +1,6 @@
 import { Observable, of } from 'rxjs';
-
-import { IDataTableFilter, IDataTableService } from '../interfaces';
 import { Helpers } from '../../../utils/Helpers';
+import { IDataTableFilter, IDataTableService, IDataTableSort } from '../interfaces';
 
 export class StaticDataTableService<T> implements IDataTableService<T> {
   originalData: T[];
@@ -11,12 +10,13 @@ export class StaticDataTableService<T> implements IDataTableService<T> {
   }
 
   public getTableResults(
-    sort: { id: string; value: string; transform?: Function },
+    sort: IDataTableSort,
     filter: IDataTableFilter | IDataTableFilter[],
     page: number = 0,
     pageSize: number,
     globalSearch?: string,
     outsideFilter?: any,
+    where?: { query: string; form: any },
   ): Observable<{ results: T[]; total: number }> {
     this.currentData = [...this.originalData];
     let total: number = this.originalData.length;
@@ -42,17 +42,17 @@ export class StaticDataTableService<T> implements IDataTableService<T> {
         this.currentData = this.currentData.slice(page * pageSize, (page + 1) * pageSize);
       }
     }
-    return of({ results: this.currentData, total: total });
+    return of({ results: this.currentData, total });
   }
 
   public filterData(currentData: T[], filter: IDataTableFilter | IDataTableFilter[]): T[] {
-    let filters = Helpers.convertToArray(filter);
+    const filters = Helpers.convertToArray(filter);
     filters.forEach((aFilter) => {
       if (Array.isArray(aFilter.value)) {
-        let values = Helpers.convertToArray(aFilter.value).map(Helpers.escapeString);
+        const values = Helpers.convertToArray(aFilter.value).map(Helpers.escapeString);
         currentData = currentData.filter(Helpers.filterByField(aFilter.id, values));
       } else {
-        let value = Helpers.escapeString(aFilter.value);
+        const value = Helpers.escapeString(aFilter.value);
         currentData = currentData.filter(Helpers.filterByField(aFilter.id, value));
       }
     });

@@ -1,20 +1,25 @@
 // NG2
-import { Component, Input, OnInit, Output, EventEmitter } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 // APP
 import { NovoLabelService } from '../../services/novo-label-service';
 
 @Component({
   selector: 'novo-tip-well',
   template: `
-        <div *ngIf="isActive">
-            <div>
-                <i class="bhi-{{ icon }}" *ngIf="icon" [attr.data-automation-id]="'novo-tip-well-icon-' + name"></i>
-                <p *ngIf="sanitize" [attr.data-automation-id]="'novo-tip-well-tip-' + name">{{ tip }}</p>
-                <p *ngIf="!sanitize" [attr.data-automation-id]="'novo-tip-well-tip-' + name" [innerHTML]="tip"></p>
-            </div>
-            <button theme="dialogue" (click)="hideTip()" *ngIf="button" [attr.data-automation-id]="'novo-tip-well-button-' + name">{{ buttonText }}</button>
-        </div>
-    `,
+    <div *ngIf="isActive">
+      <div>
+        <i class="bhi-{{ icon }}" *ngIf="icon" [attr.data-automation-id]="'novo-tip-well-icon-' + name"></i>
+        <ng-content select="novo-icon"></ng-content>
+        <p *ngIf="sanitize && tip.length" [attr.data-automation-id]="'novo-tip-well-tip-' + name">{{ tip }}</p>
+        <p *ngIf="!sanitize && tipWithStyles" [attr.data-automation-id]="'novo-tip-well-tip-' + name" [innerHTML]="tipWithStyles"></p>
+        <p [attr.data-automation-id]="'novo-tip-well-tip-' + name"><ng-content></ng-content></p>
+      </div>
+      <button theme="dialogue" size="small" (click)="hideTip()" *ngIf="button" [attr.data-automation-id]="'novo-tip-well-button-' + name">
+        {{ buttonText }}
+      </button>
+    </div>
+  `,
   host: {
     '[class.active]': 'isActive',
   },
@@ -39,7 +44,10 @@ export class NovoTipWellElement implements OnInit {
   isLocalStorageEnabled: any;
   localStorageKey: string;
 
-  constructor(private labels: NovoLabelService) {
+  private _tipWithStyles: SafeHtml;
+  private _lastTipStyled: string;
+
+  constructor(private labels: NovoLabelService, private sanitizer: DomSanitizer) {
     this.isActive = true;
     // Check if localStorage is enabled
     this.isLocalStorageEnabled = (() => {
@@ -59,6 +67,15 @@ export class NovoTipWellElement implements OnInit {
     })();
   }
 
+  // Trusts the HTML in order to show CSS styles
+  get tipWithStyles(): SafeHtml {
+    if (!this._tipWithStyles || this._lastTipStyled !== this.tip) {
+      this._tipWithStyles = this.sanitizer.bypassSecurityTrustHtml(this.tip);
+      this._lastTipStyled = this.tip;
+    }
+    return this._tipWithStyles;
+  }
+
   ngOnInit() {
     this.tip = this.tip || '';
     this.buttonText = this.buttonText || this.labels.okGotIt;
@@ -69,14 +86,11 @@ export class NovoTipWellElement implements OnInit {
     this.localStorageKey = `novo-tw_${this.name}`;
     // Check localStorage for state
     if (this.isLocalStorageEnabled) {
-      let storedValue = JSON.parse(localStorage.getItem(this.localStorageKey));
+      const storedValue = JSON.parse(localStorage.getItem(this.localStorageKey));
       this.isActive = storedValue !== false;
     }
   }
 
-  /**
-   * @name hideTip
-   */
   hideTip() {
     if (this.isLocalStorageEnabled) {
       localStorage.setItem(this.localStorageKey, JSON.stringify(false));

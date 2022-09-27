@@ -1,11 +1,11 @@
 // NG2
-import { Component, ElementRef, ChangeDetectorRef } from '@angular/core';
+import { ChangeDetectorRef, Component, ElementRef } from '@angular/core';
 // Vendor
 import { from, Observable } from 'rxjs';
+import { NovoLabelService } from '../../../../services/novo-label-service';
 // APP
 import { Helpers } from '../../../../utils/Helpers';
 import { PickerResults } from '../../../picker/extras/picker-results/PickerResults';
-import { NovoLabelService } from '../../../../services/novo-label-service';
 
 @Component({
   selector: 'quick-note-results',
@@ -13,21 +13,22 @@ import { NovoLabelService } from '../../../../services/novo-label-service';
     class: 'active',
   },
   template: `
-        <novo-loading theme="line" *ngIf="isLoading && !matches.length"></novo-loading>
-        <novo-list *ngIf="matches.length > 0">
-            <novo-list-item
-                *ngFor="let match of matches"
-                (click)="selectMatch($event)"
-                [class.active]="match===activeMatch"
-                (mouseenter)="selectActive(match)">
-                <item-content>
-                    <p [innerHtml]="highlight(match.label, term)"></p>
-                </item-content>
-            </novo-list-item>
-        </novo-list>
-        <p class="picker-error" *ngIf="hasError">{{ labels.quickNoteError }}</p>
-        <p class="picker-null" *ngIf="!isLoading && !matches.length && !hasError">{{ labels.quickNoteEmpty }}</p>
-    `,
+    <novo-loading theme="line" *ngIf="isLoading && !matches.length"></novo-loading>
+    <novo-list *ngIf="matches.length > 0">
+      <novo-list-item
+        *ngFor="let match of matches"
+        (click)="selectMatch($event)"
+        [class.active]="match === activeMatch"
+        (mouseenter)="selectActive(match)"
+      >
+        <item-content>
+          <p [innerHtml]="match.label | highlight:term"></p>
+        </item-content>
+      </novo-list-item>
+    </novo-list>
+    <p class="picker-error" *ngIf="hasError">{{ labels.quickNoteError }}</p>
+    <p class="picker-null" *ngIf="!isLoading && !matches.length && !hasError">{{ labels.quickNoteEmpty }}</p>
+  `,
 })
 export class QuickNoteResults extends PickerResults {
   // Mode that the quick note is in for tagging
@@ -59,7 +60,7 @@ export class QuickNoteResults extends PickerResults {
   }
 
   search(term: string, taggingMode): Observable<any> {
-    let searchCall = this.config.options[taggingMode];
+    const searchCall = this.config.options[taggingMode];
     return from(
       new Promise((resolve, reject) => {
         // Check if there is match data
@@ -79,9 +80,7 @@ export class QuickNoteResults extends PickerResults {
           } else if (typeof searchCall === 'function') {
             this.isStatic = false;
             // Promises (ES6 or Deferred) are resolved whenever they resolve
-            searchCall(term)
-              .then(this.structureArray.bind(this))
-              .then(resolve, reject);
+            searchCall(term).then(this.structureArray.bind(this)).then(resolve, reject);
           } else {
             // All other kinds of data are rejected
             reject('The data provided is not an array or a promise');
@@ -112,8 +111,8 @@ export class QuickNoteResults extends PickerResults {
       });
     }
     return collection.map((data) => {
-      let value = this.config.field ? data[this.config.field[this.taggingMode]] : data.value || data;
-      let label = this.config.format ? Helpers.interpolate(this.config.format[this.taggingMode], data) : data.label || String(value);
+      const value = this.config.field ? data[this.config.field[this.taggingMode]] : data.value || data;
+      const label = this.config.format ? Helpers.interpolate(this.config.format[this.taggingMode], data) : data.label || String(value);
       return { value, label, data };
     });
   }
@@ -130,7 +129,7 @@ export class QuickNoteResults extends PickerResults {
       event.preventDefault();
     }
 
-    let selected = this.activeMatch;
+    const selected = this.activeMatch;
     if (selected) {
       this.parent.onSelected(this.taggingMode, selected);
       this.parent.hideResults();

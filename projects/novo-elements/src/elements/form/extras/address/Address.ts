@@ -1,9 +1,9 @@
 // NG2
-import { Component, forwardRef, Input, OnInit, ChangeDetectionStrategy, EventEmitter, Output } from '@angular/core';
-import { NG_VALUE_ACCESSOR, ControlValueAccessor } from '@angular/forms';
+import { Component, EventEmitter, forwardRef, Input, OnInit, Output } from '@angular/core';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 // APP
-import { getStates, findByCountryId, COUNTRIES } from '../../../../utils/countries/Countries';
 import { NovoLabelService } from '../../../../services/novo-label-service';
+import { COUNTRIES, findByCountryId, getStates } from '../../../../utils/countries/Countries';
 import { Helpers } from '../../../../utils/Helpers';
 
 // Value accessor for the component (supports ngModel)
@@ -64,6 +64,7 @@ export interface NovoAddressConfig {
         (focus)="isFocused($event, 'address1')"
         (blur)="isBlurred($event, 'address1')"
         (input)="onInput($event, 'address1')"
+        [disabled]="disabled.address1"
       />
     </span>
     <span
@@ -92,6 +93,7 @@ export interface NovoAddressConfig {
         (focus)="isFocused($event, 'address2')"
         (blur)="isBlurred($event, 'address2')"
         (input)="onInput($event, 'address2')"
+        [disabled]="disabled.address2"
       />
     </span>
     <span
@@ -115,6 +117,7 @@ export interface NovoAddressConfig {
         (focus)="isFocused($event, 'city')"
         (blur)="isBlurred($event, 'city')"
         (input)="onInput($event, 'city')"
+        [disabled]="disabled.city"
       />
     </span>
     <span
@@ -156,6 +159,7 @@ export interface NovoAddressConfig {
         (focus)="isFocused($event, 'zip')"
         (blur)="isBlurred($event, 'zip')"
         (input)="onInput($event, 'zip')"
+        [disabled]="disabled.zip"
       />
     </span>
     <span
@@ -185,7 +189,7 @@ export interface NovoAddressConfig {
 export class NovoAddressElement implements ControlValueAccessor, OnInit {
   @Input()
   config: NovoAddressConfig;
-  private _readOnly: boolean = false;
+  private _readOnly = false;
   @Input()
   set readOnly(readOnly: boolean) {
     this._readOnly = readOnly;
@@ -211,7 +215,7 @@ export class NovoAddressElement implements ControlValueAccessor, OnInit {
   valid: any = {};
   stateOptions: any;
   tooltip: any = {};
-  initComplete: boolean = false;
+  initComplete = false;
   @Output()
   change: EventEmitter<any> = new EventEmitter();
   @Output()
@@ -227,13 +231,13 @@ export class NovoAddressElement implements ControlValueAccessor, OnInit {
     if (!this.config) {
       this.config = {};
     }
+    this.initConfig();
     if (this.model) {
       this.writeValue(this.model);
       this.updateControl();
     } else if (!this.model) {
       this.model = {};
     }
-    this.initConfig();
     if (Helpers.isBlank(this.model.countryID)) {
       this.updateStates();
     }
@@ -277,7 +281,7 @@ export class NovoAddressElement implements ControlValueAccessor, OnInit {
   }
 
   isValid(field: string): void {
-    let valid: boolean = true;
+    let valid = true;
     if (
       ((this.config[field].required && (Helpers.isBlank(this.model[field]) || Helpers.isEmpty(this.model[field]))) ||
         !this.config[field].required) &&
@@ -305,20 +309,20 @@ export class NovoAddressElement implements ControlValueAccessor, OnInit {
   }
 
   isInvalid(field: string): void {
-    let invalid: boolean = false;
-    let invalidMaxlength: boolean = false;
+    let invalid = false;
+    let invalidMaxlength = false;
     if (
       (field !== 'countryID' &&
         field !== 'state' &&
-        this.config[field].required &&
+        this.config[field]?.required &&
         Helpers.isEmpty(this.model[field]) &&
         !Helpers.isBlank(this.model[field])) ||
-      (field === 'countryID' && this.config[field].required && Helpers.isBlank(this.model.countryName) && this.config[field].updated) ||
+      (field === 'countryID' && this.config[field]?.required && Helpers.isBlank(this.model.countryName) && this.config[field]?.updated) ||
       (field === 'state' &&
-        this.config[field].required &&
+        this.config[field]?.required &&
         (Helpers.isBlank(this.model.state) || Helpers.isEmpty(this.model.state)) &&
         !Helpers.isBlank(this.model.countryID) &&
-        this.config[field].updated &&
+        this.config[field]?.updated &&
         this.config.state.pickerConfig &&
         this.config.state.pickerConfig.defaultOptions &&
         this.config.state.pickerConfig.defaultOptions.length > 0)
@@ -326,8 +330,8 @@ export class NovoAddressElement implements ControlValueAccessor, OnInit {
       invalid = true;
     } else if (
       !Helpers.isEmpty(this.model[field]) &&
-      !Helpers.isBlank(this.config[field].maxlength) &&
-      this.config[field].maxlength < this.model[field].length
+      !Helpers.isBlank(this.config[field]?.maxlength) &&
+      this.config[field]?.maxlength < this.model[field].length
     ) {
       invalid = true;
       invalidMaxlength = true;
@@ -340,7 +344,7 @@ export class NovoAddressElement implements ControlValueAccessor, OnInit {
     this.isInvalid(field);
     this.isValid(field);
     if (event) {
-      this.change.emit({ value: this.model[field], field: field });
+      this.change.emit({ value: this.model[field], field });
     }
   }
 
@@ -355,9 +359,9 @@ export class NovoAddressElement implements ControlValueAccessor, OnInit {
   }
 
   onCountryChange(evt) {
-    let country: any = evt && evt.rawValue ? evt.rawValue : null;
+    const country: any = evt && evt.rawValue ? evt.rawValue : null;
     let field: any;
-    let statesUpdatable: boolean = false;
+    let statesUpdatable = false;
     this.config.countryID.updated = true;
     if (this.config.countryID.pickerConfig) {
       field = this.config.countryID.pickerConfig.field;
@@ -388,7 +392,7 @@ export class NovoAddressElement implements ControlValueAccessor, OnInit {
   }
 
   onStateChange(evt) {
-    let state: any = evt && evt.value ? evt.value : null;
+    const state: any = evt && evt.value ? evt.value : null;
     this.config.state.updated = true;
     this.model.state = state;
     this.updateControl();
@@ -396,7 +400,7 @@ export class NovoAddressElement implements ControlValueAccessor, OnInit {
   }
 
   setStateLabel(model: any) {
-    let state: string = model.state;
+    const state: string = model.state;
     if (!Helpers.isBlank(state)) {
       if (this.config.state.required) {
         this.valid.state = true;
@@ -441,10 +445,10 @@ export class NovoAddressElement implements ControlValueAccessor, OnInit {
     }
   }
 
-  getStateOptions(filter: string = '', countryID: number): any[] {
+  getStateOptions(filter = '', countryID: number) {
     if (countryID) {
-      const country: any = findByCountryId(countryID);
-      const states: any[] = getStates(country.name);
+      const country = findByCountryId(countryID);
+      const states = getStates(country.name);
       if (filter) {
         return states.filter((name) => new RegExp(`${filter}`, 'gi').test(name));
       }
@@ -460,8 +464,8 @@ export class NovoAddressElement implements ControlValueAccessor, OnInit {
     this.onInput(null, 'state');
   }
 
-  writeValue(model: any): void {
-    let loadingCountries: boolean = false;
+  writeValue(model) {
+    let loadingCountries = false;
     if (model) {
       let countryName;
       if (model.countryName && model.countryID) {
@@ -469,10 +473,10 @@ export class NovoAddressElement implements ControlValueAccessor, OnInit {
       } else if (model.countryID) {
         if (this.config.countryID.pickerConfig && this.config.countryID.pickerConfig.getLabels) {
           if (Helpers.isFunction(this.config.countryID.pickerConfig.getLabels)) {
-            let promise: any = this.config.countryID.pickerConfig.getLabels(model.countryID);
+            const promise = this.config.countryID.pickerConfig.getLabels(model.countryID);
             loadingCountries = true;
             if (promise.then) {
-              promise.then((result: any) => {
+              promise.then((result) => {
                 loadingCountries = false;
                 countryName = Helpers.interpolateWithFallback(this.config.countryID.pickerConfig.format, result);
                 this.model = Object.assign(model, { countryName });
@@ -485,7 +489,7 @@ export class NovoAddressElement implements ControlValueAccessor, OnInit {
       if (countryName) {
         countryName = countryName.trim();
         model.state = model.state || '';
-        this.model = Object.assign(model, { countryName: countryName });
+        this.model = Object.assign(model, { countryName });
       } else {
         this.model = model;
       }
@@ -506,7 +510,7 @@ export class NovoAddressElement implements ControlValueAccessor, OnInit {
     this.onModelTouched = fn;
   }
 
-  private getDefaultStateConfig(): any {
+  private getDefaultStateConfig() {
     return {
       field: 'value',
       format: '$label',
@@ -519,11 +523,11 @@ export class NovoAddressElement implements ControlValueAccessor, OnInit {
     };
   }
 
-  private getDefaultCountryConfig(): any {
+  private getDefaultCountryConfig() {
     return {
       field: 'value',
       format: '$label',
-      options: (query: string = '') => {
+      options: (query = '') => {
         return new Promise((resolve) => {
           let countries = COUNTRIES;
           if (query) {
@@ -534,7 +538,7 @@ export class NovoAddressElement implements ControlValueAccessor, OnInit {
       },
       getLabels: (countryID) => {
         return new Promise((resolve: any) => {
-          let country: any = findByCountryId(countryID);
+          const country: any = findByCountryId(countryID);
           if (country) {
             resolve({ value: country.id, label: country.name });
           } else {

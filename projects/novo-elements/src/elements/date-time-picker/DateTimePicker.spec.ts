@@ -1,11 +1,11 @@
 // NG2
-import { TestBed, async } from '@angular/core/testing';
+import { async, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
-// APP
-import { NovoDateTimePickerElement } from './DateTimePicker';
 import { NovoLabelService } from '../../services/novo-label-service';
 import { NovoDatePickerModule } from '../date-picker/DatePicker.module';
 import { NovoTimePickerModule } from '../time-picker/TimePicker.module';
+// APP
+import { NovoDateTimePickerElement } from './DateTimePicker';
 
 xdescribe('Elements: NovoDateTimePickerElement', () => {
   let fixture;
@@ -67,7 +67,7 @@ xdescribe('Elements: NovoDateTimePickerElement', () => {
 
   describe('Method: setDateLabels()', () => {
     beforeEach(() => {
-      spyOn(component.labels, 'formatDateWithFormat').and.returnValue('LABEL');
+      jest.spyOn(component.labels, 'formatDateWithFormat').mockReturnValue('LABEL');
     });
     it('should set the selectedLabel', () => {
       component.setDateLabels(new Date());
@@ -76,34 +76,34 @@ xdescribe('Elements: NovoDateTimePickerElement', () => {
   });
 
   describe('Method: onDateSelected()', () => {
-    let now = new Date();
+    const now = new Date();
     beforeEach(() => {
-      spyOn(component, 'setDateLabels');
-      spyOn(component, '_onChange');
-      spyOn(component.onSelect, 'emit');
-      spyOn(component, 'createFullDateValue').and.returnValue(now);
+      jest.spyOn(component, 'setDateLabels');
+      // jest.spyOn(component, '_onChange');
+      jest.spyOn(component.onSelect, 'emit');
+      jest.spyOn(component, 'createFullDateValue').mockReturnValue(now);
     });
     it('should call and set everything right', () => {
       component.onDateSelected({ date: now });
       expect(component.model).toEqual(now);
       expect(component.setDateLabels).toHaveBeenCalledWith(now);
-      expect(component._onChange).toHaveBeenCalledWith(now);
+      // expect(component._onChange).toHaveBeenCalledWith(now);
       expect(component.onSelect.emit).toHaveBeenCalledWith({ date: now });
     });
   });
 
   describe('Method: onTimeSelected()', () => {
-    let now = new Date();
+    const now = new Date();
     beforeEach(() => {
-      spyOn(component, '_onChange');
-      spyOn(component, 'setTimeLabels');
-      spyOn(component.onSelect, 'emit');
-      spyOn(component, 'createFullDateValue').and.returnValue(now);
+      // jest.spyOn(component, '_onChange');
+      jest.spyOn(component, 'setTimeLabels');
+      jest.spyOn(component.onSelect, 'emit');
+      jest.spyOn(component, 'createFullDateValue').mockReturnValue(now);
     });
     it('should call and set everything right', () => {
       component.onTimeSelected({ date: now });
       expect(component.model).toEqual(now);
-      expect(component._onChange).toHaveBeenCalledWith(now);
+      // expect(component._onChange).toHaveBeenCalledWith(now);
       expect(component.setTimeLabels).toHaveBeenCalledWith(now);
       expect(component.onSelect.emit).toHaveBeenCalledWith({ date: now });
     });
@@ -111,11 +111,11 @@ xdescribe('Elements: NovoDateTimePickerElement', () => {
 
   describe('Method: writeValue()', () => {
     beforeEach(() => {
-      spyOn(component, 'setDateLabels');
-      spyOn(component, 'setTimeLabels');
+      jest.spyOn(component, 'setDateLabels');
+      jest.spyOn(component, 'setTimeLabels');
     });
     it('set the model and labels with correct date', () => {
-      let now = new Date();
+      const now = new Date();
       component.writeValue(now);
       expect(component.model).toEqual(now);
       expect(component.timePickerValue).toEqual(now);
@@ -132,7 +132,7 @@ xdescribe('Elements: NovoDateTimePickerElement', () => {
 
   describe('Method: registerOnChange()', () => {
     it('should set the fn', () => {
-      let test = () => {};
+      const test = () => {};
       component.registerOnChange(test);
       expect(component._onChange).toEqual(test);
     });
@@ -140,7 +140,7 @@ xdescribe('Elements: NovoDateTimePickerElement', () => {
 
   describe('Method: registerOnTouched()', () => {
     it('should set the fn', () => {
-      let test = () => {};
+      const test = () => {};
       component.registerOnTouched(test);
       expect(component._onTouched).toEqual(test);
     });
