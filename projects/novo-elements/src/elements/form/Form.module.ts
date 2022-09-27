@@ -34,7 +34,7 @@ import { NovoControlGroup } from './ControlGroup';
 import { NovoControlTemplates } from './ControlTemplates';
 import { NovoDynamicFormElement, NovoFieldsetElement, NovoFieldsetHeaderElement } from './DynamicForm';
 import { NovoFormExtrasModule } from './extras/FormExtras.module';
-import { ControlConfirmModal, ControlPromptModal } from './FieldInteractionModals';
+import { ControlConfirmModal, ControlPromptModal, ControlCustomPromptModal} from './FieldInteractionModals';
 import { NovoFormElement } from './Form';
 
 @NgModule({
@@ -77,6 +77,7 @@ import { NovoFormElement } from './Form';
     NovoFieldsetHeaderElement,
     ControlConfirmModal,
     ControlPromptModal,
+    ControlCustomPromptModal,
     NovoControlGroup,
     NovoControlTemplates,
   ],

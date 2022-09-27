@@ -14,7 +14,7 @@ import { NovoModalService } from '../modal/modal.service';
 import { EntityPickerResults } from '../picker/extras/entity-picker-results/EntityPickerResults';
 import { NovoToastService, ToastOptions } from '../toast/ToastService';
 import { CustomHttp, ModifyPickerConfigArgs, OptionsFunction } from './FieldInteractionApiTypes';
-import { ControlConfirmModal, ControlPromptModal } from './FieldInteractionModals';
+import { ControlConfirmModal, ControlPromptModal, ControlCustomPromptModal } from './FieldInteractionModals';
 import { NovoControlConfig } from './FormControls';
 import { IFieldInteractionEvent, NovoFieldset, ResultsTemplateType } from './FormInterfaces';
 import { NovoFormControl } from './NovoFormControl';
@@ -491,6 +491,18 @@ export class FieldInteractionApi {
   promptUser(key: string, changes: string[]): Promise<boolean> {
     (document.activeElement as any).blur();
     return this.modalService.open(ControlPromptModal, { changes, key }).onClosed;
+  }
+
+  public promptCustomModal(key: string,
+    modalConfig: {
+      notificationType?: string,
+      header?: string,
+      message?: string,
+      buttonCancel?: { label: string; theme?: string, icon?: string },
+      buttonOK?: { label: string; theme?: string, icon?: string }
+    }): Promise<boolean> {
+    (document.activeElement as any).blur();
+    return this.modalService.open(ControlCustomPromptModal, { key, modalConfig }).onClosed;
   }
 
   setProperty(key: string, prop: string, value, otherForm?: NovoFormGroup): void {
