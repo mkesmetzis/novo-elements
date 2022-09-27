@@ -1,5 +1,5 @@
 // NG2
-import { TestBed, async } from '@angular/core/testing';
+import { async, TestBed } from '@angular/core/testing';
 // App
 import { NovoValueElement, NOVO_VALUE_THEME, NOVO_VALUE_TYPE } from './Value';
 // import { NovoLabelService } from '../../services/novo-label-service';
@@ -31,26 +31,26 @@ xdescribe('Elements: NovoValueElement', () => {
   describe('iconClass ', () => {
     it('should set iconClass to icon iconCls', () => {
       component.launched = false;
-      let icon: object = {
+      const icon: object = {
         iconCls: 'test',
         onIconClick: '',
       };
-      let result = component.iconClass(icon);
+      const result = component.iconClass(icon);
       expect(result).toBe('bhi-test actions');
     });
 
     it('should set iconClass to iconCls and clickable', () => {
       component.launched = false;
-      let icon: object = {
+      const icon: object = {
         iconCls: 'test',
-        onIconClick: function() {},
+        onIconClick() {},
       };
-      let result = component.iconClass(icon);
+      const result = component.iconClass(icon);
       expect(result).toBe('bhi-test actions clickable');
     });
 
     it('should set iconClass to empty if no icon defined', () => {
-      let result = component.iconClass({});
+      const result = component.iconClass({});
       expect(result).toBe('');
     });
   });
@@ -129,23 +129,23 @@ xdescribe('Elements: NovoValueElement', () => {
 
   describe('onValueClick ', () => {
     it('should return true if icon is defined and not empty', () => {
-      let icon: any = {
+      const icon: any = {
         iconCls: 'test',
-        onIconClick: function() {},
+        onIconClick() {},
       };
       component.data = 'test';
-      spyOn(icon, 'onIconClick');
+      jest.spyOn(icon, 'onIconClick');
       component.onValueClick(icon);
       expect(icon.onIconClick).toHaveBeenCalledWith(component.data, component.meta);
     });
 
     it('should return flase if icon is defined and not empty', () => {
-      let icon: any = {
+      const icon: any = {
         iconCls: 'test',
         onIconClick: '',
       };
       component.data = 'test';
-      spyOn(icon, 'onIconClick');
+      jest.spyOn(icon, 'onIconClick');
       component.onValueClick(icon);
       expect(icon.onIconClick).toHaveBeenCalledWith(component.data, component.meta);
     });
@@ -154,10 +154,10 @@ xdescribe('Elements: NovoValueElement', () => {
   describe('openLink ', () => {
     it('should return true if icon is defined and not empty', () => {
       component.meta = {
-        openLink: function() {},
+        openLink() {},
       };
       component.data = 'test';
-      spyOn(component.meta, 'openLink');
+      jest.spyOn(component.meta, 'openLink');
       component.openLink();
       expect(component.meta.openLink).toHaveBeenCalledWith(component.data, component.meta);
     });

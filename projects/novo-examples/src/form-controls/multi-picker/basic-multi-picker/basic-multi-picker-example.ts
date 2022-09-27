@@ -12,11 +12,14 @@ import { ChecklistPickerResults } from 'novo-elements';
 export class BasicMultiPickerExample {
   placeholder: string = 'Select...';
   value: any = { states: ['Alabama'], collaborators: [1, 2, 3, 4] };
-  types: any = [{ value: 'states', singular: 'state' }, { value: 'collaborators', singular: 'collaborator' }];
+  types: any = [
+    { value: 'states', singular: 'state' },
+    { value: 'collaborators', singular: 'collaborator' },
+  ];
   staticDemo: any;
 
   constructor() {
-    let states = [
+    const states = [
       'Alabama',
       'Alaska',
       'Arizona',
@@ -68,7 +71,7 @@ export class BasicMultiPickerExample {
       'Wisconsin',
       'Wyoming',
     ];
-    let collaborators = [
+    const collaborators = [
       {
         id: 1,
         firstName: 'Brian',

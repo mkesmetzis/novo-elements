@@ -1,19 +1,18 @@
 // NG2
 import {
+  AfterContentInit,
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
-  Input,
-  SimpleChanges,
-  Output,
+  ElementRef,
   EventEmitter,
   forwardRef,
-  ElementRef,
-  AfterContentInit,
+  Input,
   OnChanges,
-  ChangeDetectorRef,
-  ChangeDetectionStrategy,
+  Output,
+  SimpleChanges,
 } from '@angular/core';
-import { NG_VALUE_ACCESSOR, ControlValueAccessor } from '@angular/forms';
-import { animate, state, style, transition, trigger } from '@angular/animations';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 // APP
 import { Helpers } from '../../utils/Helpers';
 
@@ -28,34 +27,31 @@ const TILES_VALUE_ACCESSOR = {
   selector: 'novo-tiles',
   providers: [TILES_VALUE_ACCESSOR],
   template: `
-        <div class="tile-container" [class.active]="focused" [class.disabled]="disabled">
-            <div class="tile" *ngFor="let option of _options; let i = index" [ngClass]="{active: option.checked, disabled: option.disabled}" (click)="select($event, option)" [attr.data-automation-id]="option.label || option">
-                <input class="tiles-input" [name]="name" type="radio" [value]="option.checked || option" [attr.id]="name + i" (change)="select($event, option)" (focus)="setFocus(true)" (blur)="setFocus(false)" [disabled]="disabled">
-                <label [attr.for]="name + i" [attr.data-automation-id]="option.label || option">
-                    {{ option.label || option }}
-                </label>
-            </div>
-            <span class="active-indicator" [@tileState]="state" [hidden]="activeTile === undefined || activeTile === null"></span>
-        </div>
-    `,
-  animations: [
-    trigger('tileState', [
-      state(
-        'inactive',
-        style({
-          opacity: '0',
-        }),
-      ),
-      state(
-        'active',
-        style({
-          opacity: '1',
-        }),
-      ),
-      transition('inactive => active', animate('200ms ease-in')),
-      transition('active => inactive', animate('200ms ease-out')),
-    ]),
-  ],
+    <div class="tile-container" [class.active]="focused" [class.disabled]="disabled">
+      <div
+        class="tile"
+        *ngFor="let option of _options; let i = index"
+        [ngClass]="{ active: option.checked, disabled: option.disabled }"
+        (click)="select($event, option)"
+        [attr.data-automation-id]="option.label || option"
+      >
+        <input
+          class="tiles-input"
+          [name]="name"
+          type="radio"
+          [value]="option.checked || option.value || option"
+          [attr.id]="name + i"
+          (change)="select($event, option)"
+          (focus)="setFocus(true)"
+          (blur)="setFocus(false)"
+          [disabled]="disabled"
+        />
+        <label [attr.for]="name + i" [attr.data-automation-id]="option.label || option">
+          {{ option.label || option }}
+        </label>
+      </div>
+    </div>
+  `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class NovoTilesElement implements ControlValueAccessor, AfterContentInit, OnChanges {
@@ -76,7 +72,6 @@ export class NovoTilesElement implements ControlValueAccessor, AfterContentInit,
 
   _options: Array<any> = [];
   public activeTile: any = null;
-  public state: String = 'inactive';
   public focused: boolean = false;
 
   model: any;
@@ -95,7 +90,7 @@ export class NovoTilesElement implements ControlValueAccessor, AfterContentInit,
   }
 
   ngOnChanges(change: SimpleChanges) {
-    if (change['options'] && change['options'].currentValue && !change['options'].firstChange) {
+    if (change.options && change.options.currentValue && !change.options.firstChange) {
       this.name = this.name || '';
       this._options = [];
       this.setupOptions();
@@ -105,7 +100,7 @@ export class NovoTilesElement implements ControlValueAccessor, AfterContentInit,
   setupOptions() {
     if (this.options && this.options.length && (this.options[0].value === undefined || this.options[0].value === null)) {
       this._options = this.options.map((x) => {
-        let item = { value: x, label: x, checked: this.model === x };
+        const item = { value: x, label: x, checked: this.model === x };
         if (item.checked) {
           this.setTile(item);
         }
@@ -113,7 +108,7 @@ export class NovoTilesElement implements ControlValueAccessor, AfterContentInit,
       });
     } else {
       this._options = this.options.map((x) => {
-        x.checked = this.model === x.value;
+        x.checked = this.model === x.value || (this.model && this.model.id === x.value);
         if (x.checked) {
           this.setTile(x);
         }
@@ -135,7 +130,7 @@ export class NovoTilesElement implements ControlValueAccessor, AfterContentInit,
         return;
       }
 
-      for (let option of this._options) {
+      for (const option of this._options) {
         option.checked = false;
       }
 
@@ -153,23 +148,8 @@ export class NovoTilesElement implements ControlValueAccessor, AfterContentInit,
   setTile(item) {
     if (item) {
       this.activeTile = item.value;
-      this.moveTile();
+      this.ref.markForCheck();
     }
-  }
-
-  moveTile() {
-    setTimeout(() => {
-      let ind = this.element.nativeElement.querySelector('.active-indicator');
-      let el = this.element.nativeElement.querySelector('.tile.active');
-      if (ind && el) {
-        let w: number = el.clientWidth;
-        let left: number = el.offsetLeft - el.offsetTop; // Removes the border width that Firefox adds without affecting other browsers
-        ind.style.width = `calc(${w}px + 0.32em)`;
-        ind.style.left = `${left}px`;
-        this.state = 'active';
-        this.ref.markForCheck();
-      }
-    });
   }
 
   writeValue(model: any): void {

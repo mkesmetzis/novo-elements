@@ -1,18 +1,17 @@
 // NG2
-import {ChangeDetectorRef, Component, ElementRef, NO_ERRORS_SCHEMA} from '@angular/core';
-import {TestBed, async, ComponentFixture} from '@angular/core/testing';
+import { OverlayModule } from '@angular/cdk/overlay';
+import { ChangeDetectorRef, Component, ElementRef, NO_ERRORS_SCHEMA } from '@angular/core';
+import { async, ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { NovoLabelService, NovoTemplateService } from '../../services';
+import { DateFormatService } from '../../services/date-format/DateFormat';
 // App
-import { NovoAutoSize } from './Control';
-import { NovoControlElement } from './Control';
-import {FieldInteractionApi, NovoLabelService, NovoTemplateService} from '../..';
-import {DateFormatService} from '../../services/date-format/DateFormat';
+import { NovoAutoSize, NovoControlElement } from './Control';
+import { FieldInteractionApi } from './FieldInteractionApi';
 
 @Component({
   selector: 'novo-auto-size-test-component',
-  template: `
-        <textarea autosize></textarea>
-    `,
+  template: ` <textarea autosize></textarea> `,
   styles: [
     `
       textarea {
@@ -37,6 +36,7 @@ describe('Elements: NovoAutoSize', () => {
 
     beforeEach(async(() => {
       TestBed.configureTestingModule({
+        imports: [OverlayModule],
         declarations: [NovoAutoSize, NovoAutoSizeTestComponent],
       }).compileComponents();
       fixture = TestBed.createComponent(NovoAutoSizeTestComponent);
@@ -67,18 +67,17 @@ describe('Elements: NovoAutoSize', () => {
 });
 
 describe('Test Localization', () => {
-  let mockElement: ElementRef = new ElementRef(document.createElement('div'));
+  const mockElement: ElementRef = new ElementRef(document.createElement('div'));
 
   it('should set decimal separator based on locale correctly', () => {
-    let component = new NovoControlElement(mockElement, null, null, null, null, null, 'fr-FR');
-    expect(component.decimalSeparator).toBe('.');
+    const component = new NovoControlElement(mockElement, null, null, null, null, null, 'fr-FR');
+    expect(component.locale).toBe('fr-FR');
+    expect(component.decimalSeparator).toBe(',');
   });
 });
 
 @Component({
-  template: `
-    <div></div>
-  `
+  template: ` <div></div> `,
 })
 class TestComponent {}
 describe('NovoControlElement', () => {
@@ -86,7 +85,7 @@ describe('NovoControlElement', () => {
   let fixture: ComponentFixture<NovoControlElement>;
   beforeEach(() => {
     const elementRefStub = {
-      nativeElement: { style: { height: {}, minHeight: {} }, scrollHeight: {} }
+      nativeElement: { style: { height: {}, minHeight: {} }, scrollHeight: {} },
     };
     const changeDetectorRefStub = { markForCheck: () => ({}) };
     const novoLabelServiceStub = { invalidIntegerInput: {} };
@@ -103,8 +102,8 @@ describe('NovoControlElement', () => {
         { provide: NovoLabelService, useValue: novoLabelServiceStub },
         { provide: DateFormatService, useValue: dateFormatServiceStub },
         { provide: FieldInteractionApi, useValue: fieldInteractionApiStub },
-        { provide: NovoTemplateService, useValue: novoTemplateServiceStub }
-      ]
+        { provide: NovoTemplateService, useValue: novoTemplateServiceStub },
+      ],
     });
     fixture = TestBed.createComponent(NovoControlElement);
     component = fixture.componentInstance;
@@ -113,16 +112,18 @@ describe('NovoControlElement', () => {
   it('should return false if the field has a MAX_LENGTH property but is not focused', () => {
     // Arrange
     component.control = {
-       key: 0,
-     };
+      key: 0,
+    };
     component.form = {
-      controls: [{
-        maxLength: 1,
-      }],
+      controls: [
+        {
+          maxLength: 1,
+        },
+      ],
     };
 
     // Act
-    let testBoolean = component.showCount;
+    const testBoolean = component.showCount;
 
     // Assert
     expect(testBoolean).toEqual(false);
@@ -146,7 +147,7 @@ describe('NovoControlElement', () => {
     (component as any).handleFocus(new FocusEvent('input'));
 
     // Act
-    let testBoolean = component.showCount;
+    const testBoolean = component.showCount;
 
     // Assert
     expect(testBoolean).toEqual(true);
@@ -169,7 +170,7 @@ describe('NovoControlElement', () => {
     (component as any).handleFocus(new FocusEvent('input'));
 
     // Act
-    let testBoolean = component.showCount;
+    const testBoolean = component.showCount;
 
     // Assert
     expect(testBoolean).toEqual(false);
@@ -193,7 +194,7 @@ describe('NovoControlElement', () => {
     (component as any).handleFocus(new FocusEvent('input'));
 
     // Act
-    let testBoolean = component.showCount;
+    const testBoolean = component.showCount;
 
     // Assert
     expect(testBoolean).toEqual(false);

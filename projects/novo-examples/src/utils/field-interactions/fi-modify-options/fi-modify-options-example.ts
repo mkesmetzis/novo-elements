@@ -1,7 +1,6 @@
 import { Component } from '@angular/core';
 // Vendor
-import { FormUtils, CheckboxControl, FieldInteractionApi, SelectControl, PickerControl } from 'novo-elements';
-import { map } from 'rxjs/operators';
+import { CheckboxControl, FieldInteractionApi, FormUtils, PickerControl, SelectControl } from 'novo-elements';
 
 /**
  * @title Fi Modify Options Example
@@ -16,9 +15,9 @@ export class FiModifyOptionsExample {
   public controls: any = {};
 
   constructor(private formUtils: FormUtils) {
-    let modifyOptionsAddFunction = (API: FieldInteractionApi) => {
+    const modifyOptionsAddFunction = (API: FieldInteractionApi) => {
       console.log('[FieldInteractionDemo] - modifyOptionsAddFunction'); // tslint:disable-line
-      let currentValue = API.getActiveValue();
+      const currentValue = API.getActiveValue();
       if (!currentValue) {
         API.removeStaticOption('select', 'NEW');
         API.removeStaticOption('picker', 'NEW');
@@ -28,9 +27,9 @@ export class FiModifyOptionsExample {
         API.addStaticOption('picker', 'NEW');
       }
     };
-    let modifyOptionsAsyncFunction = (API: FieldInteractionApi) => {
+    const modifyOptionsAsyncFunction = (API: FieldInteractionApi) => {
       console.log('[FieldInteractionDemo] - modifyOptionsAsyncFunction'); // tslint:disable-line
-      let currentValue = API.getActiveValue();
+      const currentValue = API.getActiveValue();
       switch (currentValue) {
         case 1:
           // Static
@@ -48,7 +47,7 @@ export class FiModifyOptionsExample {
               format: '$name $test',
               optionsUrl: 'http://novo-elements-mock.getsandbox.com/users',
             },
-            function(result) {
+            function (result) {
               result.test = 'Built with Options URL!';
               return result;
             },
@@ -65,7 +64,7 @@ export class FiModifyOptionsExample {
                 return 'http://novo-elements-mock.getsandbox.com/users';
               },
             },
-            function(result) {
+            function (result) {
               result.test = 'Built with Options URL Builder!';
               return result;
             },
@@ -76,12 +75,12 @@ export class FiModifyOptionsExample {
           API.setProperty('picker', 'label', 'Async Picker (with options promise)');
           API.modifyPickerConfig('picker', {
             format: '$name $test',
-            optionsPromise: function(query, http) {
-              return new Promise(function(resolve, reject) {
+            optionsPromise(query, http) {
+              return new Promise(function (resolve, reject) {
                 if (query && query.length) {
                   http
                     .get('http://novo-elements-mock.getsandbox.com/users')
-                    .map(function(results: any[]) {
+                    .map(function (results: any[]) {
                       return results.map((result) => {
                         result.test = 'Built with Options Promise';
                         return result;

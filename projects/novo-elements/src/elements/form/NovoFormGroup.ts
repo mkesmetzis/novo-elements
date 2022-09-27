@@ -1,6 +1,6 @@
 // NG
-import { FormGroup } from '@angular/forms';
 import { EventEmitter } from '@angular/core';
+import { FormGroup } from '@angular/forms';
 // App
 import { IFieldInteractionEvent } from './FormInterfaces';
 import { NovoFormControl } from './NovoFormControl';
@@ -12,18 +12,13 @@ export class NovoFormGroup extends FormGroup {
   public currentEntity: string;
   public currentEntityId: string;
   public associations: object;
+  public fieldsets: any[];
   public _value: any;
-
-  get value() {
-    return this.getRawValue();
-  }
-
-  set value(v: any) {
-    this._value = v;
-  }
+  public controls: { [key: string]: any };
+  public novoControls: any[];
 
   public enableAllControls(): void {
-    for (let key in this.controls) {
+    for (const key in this.controls) {
       if ((this.controls[key] as NovoFormControl).readOnly) {
         (this.controls[key] as NovoFormControl).readOnly = false;
         this.controls[key].enable();
@@ -32,7 +27,7 @@ export class NovoFormGroup extends FormGroup {
   }
 
   public disableAllControls(): void {
-    for (let key in this.controls) {
+    for (const key in this.controls) {
       if (!(this.controls[key] as NovoFormControl).readOnly) {
         (this.controls[key] as NovoFormControl).readOnly = true;
         this.controls[key].disable();

@@ -1,5 +1,5 @@
 // NG2
-import { Component, ElementRef, ChangeDetectorRef } from '@angular/core';
+import { ChangeDetectorRef, Component, ElementRef } from '@angular/core';
 // APP
 import { NovoLabelService } from '../../../../services/novo-label-service';
 import { BasePickerResults } from '../base-picker-results/BasePickerResults';
@@ -17,8 +17,9 @@ import { BasePickerResults } from '../base-picker-results/BasePickerResults';
         [class.active]="match === activeMatch"
         (mouseenter)="selectActive(match)"
         [class.disabled]="preselected(match)"
+        data-automation-id="picker-result-list-item"
       >
-        <item-content> <span [innerHtml]="highlight(match.label, term)"></span> </item-content>
+        <item-content> <span [innerHtml]="match.label | highlight:term"></span> </item-content>
       </novo-list-item>
       <novo-loading *ngIf="isLoading && matches.length > 0" theme="line"></novo-loading>
     </novo-list>
@@ -38,8 +39,8 @@ export class PickerResults extends BasePickerResults {
 
   getEmptyMessage() {
     if (this.shouldShowMessageForZeroLengthSearch()) {
-        // this property comes from Field Interactions
-        return this.config.emptyPickerMessage;
+      // this property comes from Field Interactions
+      return this.config.emptyPickerMessage;
     } else {
       return this.term === '' ? this.labels.pickerTextFieldEmpty : this.labels.pickerEmpty;
     }

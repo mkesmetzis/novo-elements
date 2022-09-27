@@ -1,14 +1,14 @@
 import { Component } from '@angular/core';
 import { FormArray } from '@angular/forms';
 import {
-  FormUtils,
-  TextBoxControl,
-  CheckboxControl,
-  NovoFormGroup,
   BaseControl,
+  CheckboxControl,
+  FormUtils,
   NovoControlGroupAddConfig,
+  NovoFormGroup,
   ReadOnlyControl,
   SelectControl,
+  TextBoxControl,
 } from 'novo-elements';
 
 /**
@@ -63,7 +63,7 @@ export class HorizontalExample {
 
   public updateInitialValue() {
     this.initValue = [
-      { text: 'TEXT 111', percentage: 100, checkbox: false, test4: 'TEST 111' },
+      { text: 'hello', percentage: 100, checkbox: false, test4: 'TEST 111' },
       { text: 'TEXT 222', percentage: 5, checkbox: false, test4: 'TEST 222' },
       { text: 'TEXT 333', percentage: 60, checkbox: true, test4: 'TEST 333' },
     ];
@@ -71,7 +71,7 @@ export class HorizontalExample {
 
   public customDelete(form: NovoFormGroup, key: string, index: number) {
     console.log('DELETE', form, key, index); // tslint:disable-line
-    const control: FormArray = <FormArray>form.controls[key];
+    const control: FormArray = form.controls[key] as FormArray;
     control.removeAt(index);
   }
 
@@ -81,11 +81,11 @@ export class HorizontalExample {
 
   private setupGroupedFormDemo() {
     this.formGroup = this.formUtils.emptyFormGroup();
-    let label = new ReadOnlyControl({ key: 'label', value: 'Label :)' });
-    let c1 = new SelectControl({ key: 'text', label: 'Text Box', options: [{ value: 'hello', label: 'Hello' }] });
-    let c2 = new TextBoxControl({ type: 'percentage', key: 'percentage', label: 'Percent', required: true });
-    let c3 = new CheckboxControl({ key: 'checkbox', label: 'Check Me!', width: 100 });
-    let c4 = new TextBoxControl({ key: 'test4', label: 'TEST4' });
+    const label = new ReadOnlyControl({ key: 'label', value: 'Label :)' });
+    const c1 = new SelectControl({ key: 'text', label: 'Text Box', options: [{ value: 'hello', label: 'Hello' }] });
+    const c2 = new TextBoxControl({ type: 'percentage', key: 'percentage', label: 'Percent', required: true });
+    const c3 = new CheckboxControl({ key: 'checkbox', label: 'Check Me!', width: 100 });
+    const c4 = new TextBoxControl({ key: 'test4', label: 'TEST4' });
     this.controls.push(label);
     this.controls.push(c1);
     this.controls.push(c2);

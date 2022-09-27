@@ -1,7 +1,6 @@
 import { Directive } from '@angular/core';
-
-import { DataTableState } from '../state/data-table-state.service';
 import { Helpers } from '../../../utils/Helpers';
+import { DataTableState } from '../state/data-table-state.service';
 
 @Directive({
   selector: '[novoDataTableSortFilter]',
@@ -30,16 +29,18 @@ export class NovoDataTableSortFilter<T> {
     }
 
     this.state.filter = filter;
+    this.state.checkRetainment('filter');
     this.state.reset(false, true);
-    this.state.updates.next({ filter: filter, sort: this.state.sort });
+    this.state.updates.next({ filter, sort: this.state.sort });
     this.state.onSortFilterChange();
   }
 
   public sort(id: string, value: string, transform: Function): void {
-    let sort = { id, value, transform };
+    const sort = { id, value, transform };
     this.state.sort = sort;
+    this.state.checkRetainment('sort');
     this.state.reset(false, true);
-    this.state.updates.next({ sort: sort, filter: this.state.filter });
+    this.state.updates.next({ sort, filter: this.state.filter });
     this.state.onSortFilterChange();
   }
 
@@ -48,7 +49,7 @@ export class NovoDataTableSortFilter<T> {
 
     filter = Helpers.convertToArray(this.state.filter);
 
-    let filterIndex = filter.findIndex((aFilter) => aFilter && aFilter.id === id);
+    const filterIndex = filter.findIndex((aFilter) => aFilter && aFilter.id === id);
     if (filterIndex > -1) {
       filter.splice(filterIndex, 1);
     }

@@ -1,15 +1,13 @@
 // NG2
-import { TestBed, async, inject } from '@angular/core/testing';
+import { inject, TestBed } from '@angular/core/testing';
 // Vendor
 // APP
 import { OptionsService } from './OptionsService';
 
 describe('Element: OptionsService', () => {
-  let fixture: any;
-  let component: any;
-  let service: any;
+  let service: OptionsService;
 
-  beforeEach(async(() => {
+  beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [
         {
@@ -18,7 +16,7 @@ describe('Element: OptionsService', () => {
         },
       ],
     });
-  }));
+  });
 
   beforeEach(inject([OptionsService], (_service) => {
     service = _service;
@@ -29,15 +27,15 @@ describe('Element: OptionsService', () => {
   });
   describe('Function: getOptionsConfig()', () => {
     it('should return default config', () => {
-      let http = {
+      const http = {
         get: (test) => {
           return { subscribe: (x, y) => {} };
         },
-      };
-      let field = {
+      } as any;
+      const field = {
         optionsUrl: 'test',
       };
-      expect(service.getOptionsConfig(http, field, {}, {}).format).toEqual('$label');
+      expect(service.getOptionsConfig(http, field, {}).format).toEqual('$label');
     });
   });
 });

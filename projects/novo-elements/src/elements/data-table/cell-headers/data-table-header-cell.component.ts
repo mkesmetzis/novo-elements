@@ -1,40 +1,37 @@
+import { CdkColumnDef } from '@angular/cdk/table';
 import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
+  ElementRef,
+  EventEmitter,
+  HostBinding,
+  HostListener,
   Input,
-  Optional,
   OnDestroy,
   OnInit,
-  ViewChild,
-  ElementRef,
+  Optional,
   Renderer2,
-  EventEmitter,
-  Output,
-  HostBinding,
   TemplateRef,
-  HostListener,
+  ViewChild,
 } from '@angular/core';
-import { CdkColumnDef } from '@angular/cdk/table';
+import { Key } from '../../../utils';
 import { fromEvent, Subscription } from 'rxjs';
-import * as dateFns from 'date-fns';
-
+import { NovoLabelService } from '../../../services/novo-label-service';
+import { Helpers } from '../../../utils/Helpers';
+import { NovoDropdownElement } from '../../dropdown/Dropdown';
 import {
-  IDataTableSortFilter,
   IDataTableChangeEvent,
   IDataTableColumn,
-  IDataTableColumnFilterOption,
   IDataTableColumnFilterConfig,
+  IDataTableColumnFilterOption,
   IDataTableColumnSortConfig,
+  IDataTableSortFilter,
 } from '../interfaces';
-
-import { NovoDataTableSortFilter } from '../sort-filter/sort-filter.directive';
-import { NovoDropdownElement } from '../../dropdown/Dropdown';
-import { NovoLabelService } from '../../../services/novo-label-service';
-import { DataTableState } from '../state/data-table-state.service';
-import { Helpers } from '../../../utils/Helpers';
 import { NovoDataTableFilterUtils } from '../services/data-table-filter-utils';
-import { KeyCodes } from '../../../utils/key-codes/KeyCodes';
+import { SortDirection } from '../sort-filter';
+import { NovoDataTableSortFilter } from '../sort-filter/sort-filter.directive';
+import { DataTableState } from '../state/data-table-state.service';
 
 @Component({
   selector: '[novo-data-table-cell-config]',
@@ -42,137 +39,165 @@ import { KeyCodes } from '../../../utils/key-codes/KeyCodes';
     <i class="bhi-{{ labelIcon }} label-icon" *ngIf="labelIcon" data-automation-id="novo-data-table-header-icon"></i>
     <label data-automation-id="novo-data-table-label">{{ label }}</label>
     <div>
-      <button
+      <novo-sort-button
         *ngIf="config.sortable"
-        tooltipPosition="right"
-        [tooltip]="labels.sort"
-        theme="icon"
-        [icon]="icon"
-        (click)="sort()"
-        [class.active]="sortActive"
         data-automation-id="novo-data-table-sort"
+        tooltipPosition="left"
+        [tooltip]="labels.sort"
         [attr.data-feature-id]="'novo-data-table-sort-' + this.id"
-      ></button>
+        (sortChange)="sort()"
+        [value]="sortValue"
+      ></novo-sort-button>
       <novo-dropdown
         *ngIf="config.filterable"
         side="right"
         parentScrollSelector=".novo-data-table-container"
         containerClass="data-table-dropdown"
         data-automation-id="novo-data-table-filter"
+        [multiple]="multiSelect"
       >
-        <button
-          type="button"
-          theme="icon"
-          icon="filter"
-          [class.active]="filterActive"
-          (click)="focusInput()"
-          tooltipPosition="right"
+        <novo-icon
+          dropdownTrigger
+          class="filter-button"
+          [class.filter-active]="filterActive"
           [tooltip]="labels.filters"
+          tooltipPosition="right"
           [attr.data-feature-id]="'novo-data-table-filter-' + this.id"
-        ></button>
+          (click)="focusInput()"
+          >filter</novo-icon
+        >
         <div class="header">
-          <span>{{ labels.filters }}</span>
-          <button
+          <novo-label>{{ labels.filters }}</novo-label>
+          <novo-button
             theme="dialogue"
             color="negative"
+            size="small"
             icon="times"
             (click)="clearFilter()"
             *ngIf="filter !== null && filter !== undefined && filter !== ''"
             data-automation-id="novo-data-table-filter-clear"
           >
             {{ labels.clear }}
-          </button>
+          </novo-button>
         </div>
-        <ng-container [ngSwitch]="config.filterConfig.type">
-          <list *ngSwitchCase="'date'">
-            <ng-container *ngIf="!showCustomRange">
-              <item
-                [class.active]="activeDateFilter === option.label"
+        <div class="optgroup-container">
+          <ng-container [ngSwitch]="config.filterConfig.type">
+            <novo-optgroup *ngSwitchCase="'date'" (keydown.escape)="handleEscapeKeydown($event)">
+              <ng-container *ngIf="!showCustomRange">
+                <novo-option
+                  [class.active]="activeDateFilter === option.label"
+                  *ngFor="let option of config.filterConfig.options"
+                  (click)="filterData(option)"
+                  [attr.data-automation-id]="'novo-data-table-filter-' + option.label"
+                >
+                  <span>{{ option.label }}</span>
+                  <novo-icon novoSuffix color="positive" *ngIf="activeDateFilter === option.label">check</novo-icon>
+                </novo-option>
+              </ng-container>
+              <novo-option
+                [class.active]="labels.customDateRange === activeDateFilter"
+                (click)="toggleCustomRange($event, true)"
+                *ngIf="config.filterConfig.allowCustomRange && !showCustomRange"
+              >
+                <span>{{ labels.customDateRange }}</span>
+                <novo-icon novoSuffix color="positive" *ngIf="labels.customDateRange === activeDateFilter">check</novo-icon>
+              </novo-option>
+              <novo-option class="calendar-container" *ngIf="showCustomRange" keepOpen>
+                <novo-stack>
+                  <div class="back-link" (click)="toggleCustomRange($event, false)">
+                    <i class="bhi-previous"></i>{{ labels.backToPresetFilters }}
+                  </div>
+                  <novo-date-picker
+                    (onSelect)="filterData($event)"
+                    [(ngModel)]="filter"
+                    range="true"
+                    (keydown.escape)="handleEscapeKeydown($event)"
+                  ></novo-date-picker>
+                </novo-stack>
+              </novo-option>
+            </novo-optgroup>
+            <novo-optgroup *ngSwitchCase="'select'">
+              <novo-option
+                [class.active]="filter === option"
                 *ngFor="let option of config.filterConfig.options"
                 (click)="filterData(option)"
-                [attr.data-automation-id]="'novo-data-table-filter-' + option.label"
-              >
-                {{ option.label }} <i class="bhi-check" *ngIf="activeDateFilter === option.label"></i>
-              </item>
-            </ng-container>
-            <item
-              [class.active]="labels.customDateRange === activeDateFilter"
-              (click)="toggleCustomRange($event, true)"
-              *ngIf="config.filterConfig.allowCustomRange && !showCustomRange"
-              [keepOpen]="true"
-            >
-              {{ labels.customDateRange }} <i class="bhi-check" *ngIf="labels.customDateRange === activeDateFilter"></i>
-            </item>
-            <div class="calendar-container" *ngIf="showCustomRange">
-              <div (click)="toggleCustomRange($event, false)"><i class="bhi-previous"></i>{{ labels.backToPresetFilters }}</div>
-              <novo-date-picker (onSelect)="filterData($event)" [(ngModel)]="filter" range="true"></novo-date-picker>
-            </div>
-          </list>
-          <list *ngSwitchCase="'select'">
-            <item
-              [class.active]="filter === option"
-              *ngFor="let option of config.filterConfig.options"
-              (click)="filterData(option)"
-              [attr.data-automation-id]="'novo-data-table-filter-' + (option?.label || option)"
-            >
-              <span>{{ option?.label || option }}</span>
-              <i class="bhi-check" *ngIf="option.hasOwnProperty('value') ? filter === option.value : filter === option"></i>
-            </item>
-          </list>
-          <list *ngSwitchCase="'multi-select'">
-            <div class="dropdown-list-filter" (keydown)="multiSelectOptionFilterHandleKeydown($event)">
-              <item class="filter-search" keepOpen="true">
-                <input
-                  [(ngModel)]="optionFilter"
-                  (ngModelChange)="multiSelectOptionFilter($event)"
-                  #optionFilterInput
-                  data-automation-id="novo-data-table-multi-select-option-filter-input"
-                />
-                <i class="bhi-search"></i>
-                <span class="error-text" [hidden]="!error || !multiSelectHasVisibleOptions()">{{ labels.selectFilterOptions }}</span>
-              </item>
-            </div>
-            <div class="dropdown-list-options">
-              <item
-                *ngFor="let option of config.filterConfig.options"
-                [hidden]="multiSelectOptionIsHidden(option)"
-                (click)="toggleSelection(option)"
                 [attr.data-automation-id]="'novo-data-table-filter-' + (option?.label || option)"
-                [keepOpen]="true"
               >
                 <span>{{ option?.label || option }}</span>
-                <i
-                  [class.bhi-checkbox-empty]="!isSelected(option, multiSelectedOptions)"
-                  [class.bhi-checkbox-filled]="isSelected(option, multiSelectedOptions)"
-                ></i>
-              </item>
-            </div>
-            <p class="filter-null-results" [hidden]="multiSelectHasVisibleOptions()">{{ labels.pickerEmpty }}</p>
-          </list>
-          <list *ngSwitchCase="'custom'">
-            <item class="filter-search" keepOpen="true">
-              <ng-container *ngTemplateOutlet="filterTemplate; context: { $implicit: config }"></ng-container>
-            </item>
-          </list>
-          <list *ngSwitchDefault>
-            <item class="filter-search" keepOpen="true">
-              <input
-                [type]="config.filterConfig.type"
-                [(ngModel)]="filter"
-                (ngModelChange)="filterData($event)"
-                #filterInput
-                data-automation-id="novo-data-table-filter-input"
-              />
-            </item>
-          </list>
-        </ng-container>
+                <novo-icon novoSuffix color="positive" *ngIf="option.hasOwnProperty('value') ? filter === option.value : filter === option"
+                  >check</novo-icon
+                >
+              </novo-option>
+            </novo-optgroup>
+            <ng-container *ngSwitchCase="'multi-select'">
+              <novo-optgroup class="dropdown-list-filter" (keydown)="multiSelectOptionFilterHandleKeydown($event)">
+                <novo-option class="filter-search" novoInert>
+                  <novo-field flex>
+                    <input
+                      novoInput
+                      [(ngModel)]="optionFilter"
+                      (ngModelChange)="multiSelectOptionFilter($event)"
+                      #optionFilterInput
+                      data-automation-id="novo-data-table-multi-select-option-filter-input"
+                      (keydown.enter)="multiSelectOptionFilterHandleKeydown($event)"
+                    />
+                    <novo-icon novoSuffix>search</novo-icon>
+                    <novo-error class="error-text" [hidden]="!error || !multiSelectHasVisibleOptions()">{{
+                      labels.selectFilterOptions
+                    }}</novo-error>
+                  </novo-field>
+                </novo-option>
+              </novo-optgroup>
+              <novo-optgroup class="dropdown-list-options" (keydown.escape)="handleEscapeKeydown($event)">
+                <novo-option
+                  *ngFor="let option of config.filterConfig.options"
+                  [hidden]="multiSelectOptionIsHidden(option)"
+                  (click)="toggleSelection(option)"
+                  [attr.data-automation-id]="'novo-data-table-filter-' + (option?.label || option)"
+                >
+                  <span>{{ option?.label || option }}</span>
+                  <novo-icon novoSuffix color="positive">{{
+                    isSelected(option, multiSelectedOptions) ? 'checkbox-filled' : 'checkbox-empty'
+                  }}</novo-icon>
+                </novo-option>
+              </novo-optgroup>
+              <novo-option class="filter-null-results" [hidden]="multiSelectHasVisibleOptions()">{{ labels.pickerEmpty }}</novo-option>
+            </ng-container>
+            <novo-optgroup *ngSwitchCase="'custom'">
+              <novo-option class="filter-search" novoInert>
+                <ng-container *ngTemplateOutlet="filterTemplate; context: { $implicit: config }"></ng-container>
+              </novo-option>
+            </novo-optgroup>
+            <novo-optgroup *ngSwitchDefault (keydown.escape)="handleEscapeKeydown($event)">
+              <novo-option class="filter-search" novoInert>
+                <novo-field flex fullWidth>
+                  <input
+                    novoInput
+                    [type]="config.filterConfig.type"
+                    [(ngModel)]="filter"
+                    (ngModelChange)="filterData($event)"
+                    #filterInput
+                    data-automation-id="novo-data-table-filter-input"
+                    (keydown.escape)="handleEscapeKeydown($event)"
+                  />
+                  <novo-icon novoSuffix>search</novo-icon>
+                </novo-field>
+              </novo-option>
+            </novo-optgroup>
+          </ng-container>
+        </div>
         <div class="footer" *ngIf="multiSelect">
-          <button theme="dialogue" color="dark" (click)="cancel()" data-automation-id="novo-data-table-multi-select-cancel">
+          <novo-button theme="dialogue" color="dark" (click)="cancel()" data-automation-id="novo-data-table-multi-select-cancel">
             {{ labels.cancel }}
-          </button>
-          <button theme="dialogue" color="positive" (click)="filterMultiSelect()" data-automation-id="novo-data-table-multi-select-filter">
+          </novo-button>
+          <novo-button
+            theme="dialogue"
+            color="positive"
+            (click)="filterMultiSelect()"
+            data-automation-id="novo-data-table-multi-select-filter"
+          >
             {{ labels.filters }}
-          </button>
+          </novo-button>
         </div>
       </novo-dropdown>
     </div>
@@ -215,7 +240,7 @@ export class NovoDataTableCellHeader<T> implements IDataTableSortFilter, OnInit,
     };
     this.resizable = this.config.resizable;
 
-    let transforms: { filter?: Function; sort?: Function } = {};
+    const transforms: { filter?: Function; sort?: Function } = {};
 
     if (column.filterable && Helpers.isObject(column.filterable)) {
       this.config.filterConfig = column.filterable as IDataTableColumnFilterConfig;
@@ -253,6 +278,7 @@ export class NovoDataTableCellHeader<T> implements IDataTableSortFilter, OnInit,
   public direction: string;
   public filterActive: boolean = false;
   public sortActive: boolean = false;
+  public sortValue: SortDirection = SortDirection.NONE;
   public showCustomRange: boolean = false;
   public activeDateFilter: string;
   public config: {
@@ -271,7 +297,7 @@ export class NovoDataTableCellHeader<T> implements IDataTableSortFilter, OnInit,
   private _column: IDataTableColumn<T>;
 
   constructor(
-    private changeDetectorRef: ChangeDetectorRef,
+    public changeDetectorRef: ChangeDetectorRef,
     public labels: NovoLabelService,
     private state: DataTableState<T>,
     private renderer: Renderer2,
@@ -286,14 +312,18 @@ export class NovoDataTableCellHeader<T> implements IDataTableSortFilter, OnInit,
     if (this._cdkColumnDef) {
       this.id = this._cdkColumnDef.name;
     }
+    this.setupFilterOptions();
 
+    this.changeDetectorRef.markForCheck();
+  }
+
+  public setupFilterOptions() {
     this.checkSortFilterState({ filter: this.state.filter, sort: this.state.sort }, true);
 
     this.multiSelect = this.config.filterConfig && this.config.filterConfig.type ? this.config.filterConfig.type === 'multi-select' : false;
     if (this.multiSelect) {
       this.multiSelectedOptions = this.filter ? [...this.filter] : [];
     }
-    this.changeDetectorRef.markForCheck();
   }
 
   public ngOnDestroy(): void {
@@ -306,9 +336,11 @@ export class NovoDataTableCellHeader<T> implements IDataTableSortFilter, OnInit,
   public checkSortFilterState(sortFilterState: IDataTableChangeEvent, initialConfig: boolean = false): void {
     if (sortFilterState.sort && sortFilterState.sort.id === this.id) {
       this.icon = `sort-${sortFilterState.sort.value}`;
+      this.sortValue = sortFilterState.sort.value === 'asc' ? SortDirection.ASC : SortDirection.DESC;
       this.sortActive = true;
     } else {
       this.icon = 'sortable';
+      this.sortValue = SortDirection.NONE;
       this.sortActive = false;
     }
 
@@ -337,12 +369,17 @@ export class NovoDataTableCellHeader<T> implements IDataTableSortFilter, OnInit,
       if (this.config.filterConfig.options) {
         if (typeof this.config.filterConfig.options[0] === 'string') {
           this.multiSelectedOptionIsHidden = (this.config.filterConfig.options as string[]).map(
-            (option: string): { option: string; hidden: boolean } => ({ option: option, hidden: false }),
+            (
+              option: string,
+            ): {
+              option: string;
+              hidden: boolean;
+            } => ({ option, hidden: false }),
           );
         } else {
           this.multiSelectedOptionIsHidden = (this.config.filterConfig.options as IDataTableColumnFilterOption[]).map(
             (option: IDataTableColumnFilterOption): { option: IDataTableColumnFilterOption; hidden: boolean } => ({
-              option: option,
+              option,
               hidden: false,
             }),
           );
@@ -356,7 +393,7 @@ export class NovoDataTableCellHeader<T> implements IDataTableSortFilter, OnInit,
     if (optionsList) {
       const optionValue = option.hasOwnProperty('value') ? option.value : option;
 
-      let found = optionsList.find((item) => this.optionPresentCheck(item, optionValue));
+      const found = optionsList.find((item) => this.optionPresentCheck(item, optionValue));
       return found !== undefined;
     }
     return false;
@@ -365,16 +402,11 @@ export class NovoDataTableCellHeader<T> implements IDataTableSortFilter, OnInit,
   public toggleSelection(option) {
     const optionValue = option.hasOwnProperty('value') ? option.value : option;
 
-    let optionIndex = this.multiSelectedOptions.findIndex((item) => this.optionPresentCheck(item, optionValue));
+    const optionIndex = this.multiSelectedOptions.findIndex((item) => this.optionPresentCheck(item, optionValue));
     this.error = false;
     if (optionIndex > -1) {
       this.multiSelectedOptions.splice(optionIndex, 1);
-      if (
-        this.optionFilter &&
-        !this.getOptionText(option)
-          .toLowerCase()
-          .startsWith(this.optionFilter.toLowerCase())
-      ) {
+      if (this.optionFilter && !this.getOptionText(option).toLowerCase().startsWith(this.optionFilter.toLowerCase())) {
         this.multiSelectedOptionIsHidden[this.multiSelectedOptionIsHidden.findIndex((record) => record.option === option)].hidden = true;
       }
     } else {
@@ -401,7 +433,7 @@ export class NovoDataTableCellHeader<T> implements IDataTableSortFilter, OnInit,
       this.multiSelectHasVisibleOptions() && this.dropdown ? (this.error = true) : null;
     } else {
       this.clearOptionFilter();
-      let actualFilter = this.multiSelectedOptions.length > 0 ? [...this.multiSelectedOptions] : undefined;
+      const actualFilter = this.multiSelectedOptions.length > 0 ? [...this.multiSelectedOptions] : undefined;
       this.filterData(actualFilter);
       this.dropdown.closePanel();
     }
@@ -411,9 +443,8 @@ export class NovoDataTableCellHeader<T> implements IDataTableSortFilter, OnInit,
     this.multiSelectedOptionIsHidden.forEach((record) => {
       if (record.option) {
         record.hidden = !(
-          this.getOptionText(record.option)
-            .toLowerCase()
-            .startsWith(optionFilter.toLowerCase()) || this.isSelected(record.option, this.multiSelectedOptions)
+          this.getOptionText(record.option).toLowerCase().startsWith(optionFilter.toLowerCase()) ||
+          this.isSelected(record.option, this.multiSelectedOptions)
         );
       }
     });
@@ -440,12 +471,12 @@ export class NovoDataTableCellHeader<T> implements IDataTableSortFilter, OnInit,
   public multiSelectOptionFilterHandleKeydown(event: KeyboardEvent) {
     if (this.multiSelect) {
       this.error = false;
-      if (this.dropdown.panelOpen && event.keyCode === KeyCodes.ESC) {
+      if (this.dropdown.panelOpen && event.key === Key.Escape) {
         // escape = clear text box and close
         Helpers.swallowEvent(event);
         this.clearOptionFilter();
         this.dropdown.closePanel();
-      } else if (event.keyCode === KeyCodes.ENTER) {
+      } else if (event.key === Key.Enter) {
         Helpers.swallowEvent(event);
         this.filterMultiSelect();
       } else if (
@@ -455,6 +486,14 @@ export class NovoDataTableCellHeader<T> implements IDataTableSortFilter, OnInit,
       ) {
         this.optionFilterInput.nativeElement.focus();
       }
+    }
+  }
+
+  @HostListener('keydown.escape', ['$event'])
+  public handleEscapeKeydown(event: KeyboardEvent) {
+    if (!this.multiSelect) {
+      this.error = false;
+      this.dropdown.closePanel();
     }
   }
 
@@ -471,9 +510,9 @@ export class NovoDataTableCellHeader<T> implements IDataTableSortFilter, OnInit,
   public startResize(mouseDownEvent: MouseEvent): void {
     mouseDownEvent.preventDefault();
     const minimumWidth = 60 + (this.config.filterable ? 30 : 0) + (this.config.sortable ? 30 : 0);
-    let startingWidth: number = this.elementRef.nativeElement.getBoundingClientRect().width;
+    const startingWidth: number = this.elementRef.nativeElement.getBoundingClientRect().width;
     const mouseMoveSubscription: Subscription = fromEvent(window.document, 'mousemove').subscribe((middleMouseEvent: MouseEvent) => {
-      let differenceWidth: number = middleMouseEvent.clientX - mouseDownEvent.clientX;
+      const differenceWidth: number = middleMouseEvent.clientX - mouseDownEvent.clientX;
       let width: number = startingWidth + differenceWidth;
       if (width < minimumWidth) {
         width = minimumWidth;
@@ -486,7 +525,7 @@ export class NovoDataTableCellHeader<T> implements IDataTableSortFilter, OnInit,
       this.resized.next(this._column);
     });
 
-    let mouseUpSubscription: Subscription = fromEvent(window.document, 'mouseup').subscribe(() => {
+    const mouseUpSubscription: Subscription = fromEvent(window.document, 'mouseup').subscribe(() => {
       mouseUpSubscription.unsubscribe();
       mouseMoveSubscription.unsubscribe();
       this.changeDetectorRef.markForCheck();
@@ -507,10 +546,10 @@ export class NovoDataTableCellHeader<T> implements IDataTableSortFilter, OnInit,
       setTimeout(() => this.filterInput.nativeElement.focus(), 0);
     }
     if (this.multiSelect && this.dropdown) {
-      this.dropdown.onKeyDown = (event: KeyboardEvent) => {
+      this.dropdown._handleKeydown = (event: KeyboardEvent) => {
         this.multiSelectOptionFilterHandleKeydown(event);
       };
-      setTimeout(() => this.optionFilterInput.nativeElement.focus(), 0);
+      // setTimeout(() => this.optionFilterInput.nativeElement.focus(), 0);
       this.changeDetectorRef.markForCheck();
     }
   }
@@ -529,6 +568,7 @@ export class NovoDataTableCellHeader<T> implements IDataTableSortFilter, OnInit,
   public filterData(filter?: any): void {
     let actualFilter = NovoDataTableFilterUtils.constructFilter(filter, this.config.filterConfig.type, this.multiSelect);
     const selectedOption = this.config.filterConfig.type === 'date' && filter ? filter : undefined;
+    this.activeDateFilter = selectedOption ? selectedOption.label : undefined;
 
     if (this.changeTimeout) {
       clearTimeout(this.changeTimeout);
@@ -570,7 +610,7 @@ export class NovoDataTableCellHeader<T> implements IDataTableSortFilter, OnInit,
   }
 
   private getDefaultDateFilterOptions(): IDataTableColumnFilterOption[] {
-    let opts: IDataTableColumnFilterOption[] = [
+    const opts: IDataTableColumnFilterOption[] = [
       { label: this.labels.past1Day, min: -1, max: 0 },
       { label: this.labels.past7Days, min: -7, max: 0 },
       { label: this.labels.past30Days, min: -30, max: 0 },

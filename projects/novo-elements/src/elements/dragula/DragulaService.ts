@@ -1,8 +1,7 @@
 // NG2
-import { Injectable, EventEmitter } from '@angular/core';
+import { EventEmitter, Injectable } from '@angular/core';
 // Vendor
-import * as dragulaImported from '@bullhorn/dragula';
-const dragula = dragulaImported;
+import dragula from '@bullhorn/dragula';
 
 @Injectable()
 export class NovoDragulaService {
@@ -20,19 +19,14 @@ export class NovoDragulaService {
   events: Array<string> = ['cancel', 'cloned', 'drag', 'dragend', 'drop', 'out', 'over', 'remove', 'shadow', 'dropModel', 'removeModel'];
   bags: Array<any> = [];
 
-  /**
-   * @name add
-   * @param name
-   * @param drake
-   */
   add(name, drake) {
     let bag = this.find(name);
     if (bag) {
       throw new Error(`Bag named: ${name} already exists.`);
     }
     bag = {
-      name: name,
-      drake: drake,
+      name,
+      drake,
     };
     this.bags.push(bag);
     if (drake.models) {
@@ -45,10 +39,6 @@ export class NovoDragulaService {
     return bag;
   }
 
-  /**
-   * @name find
-   * @param name
-   */
   find(name) {
     for (let i = 0; i < this.bags.length; i++) {
       if (this.bags[i].name === name) {
@@ -58,32 +48,18 @@ export class NovoDragulaService {
     return null;
   }
 
-  /**
-   * @name destroy
-   * @param name
-   */
   destroy(name) {
-    let bag = this.find(name);
-    let i = this.bags.indexOf(bag);
+    const bag = this.find(name);
+    const i = this.bags.indexOf(bag);
     this.bags.splice(i, 1);
     bag.drake.destroy();
   }
 
-  /**
-   * @name setOptions
-   * @param name
-   * @param options
-   */
   setOptions(name, options) {
-    let bag = this.add(name, dragula(options));
+    const bag = this.add(name, dragula(options));
     this.handleModels(name, bag.drake);
   }
 
-  /**
-   * @name handleModels
-   * @param name
-   * @param drake
-   */
   handleModels(name, drake) {
     let dragElm;
     let dragIndex;
@@ -110,9 +86,9 @@ export class NovoDragulaService {
       if (target === source) {
         sourceModel.splice(dropIndex, 0, sourceModel.splice(dragIndex, 1)[0]);
       } else {
-        let notCopy = dragElm === dropElm;
-        let targetModel = drake.models[drake.containers.indexOf(target)];
-        let dropElmModel = notCopy ? sourceModel[dragIndex] : JSON.parse(JSON.stringify(sourceModel[dragIndex]));
+        const notCopy = dragElm === dropElm;
+        const targetModel = drake.models[drake.containers.indexOf(target)];
+        const dropElmModel = notCopy ? sourceModel[dragIndex] : JSON.parse(JSON.stringify(sourceModel[dragIndex]));
 
         if (notCopy) {
           sourceModel.splice(dragIndex, 1);
@@ -124,16 +100,12 @@ export class NovoDragulaService {
     });
   }
 
-  /**
-   * @name setupEvents
-   * @param bag
-   */
   setupEvents(bag) {
     bag.initEvents = true;
-    let that = this;
-    let emitter = (type) => {
+    const that = this;
+    const emitter = (type) => {
       function replicate() {
-        let args = Array.prototype.slice.call(arguments);
+        const args = Array.prototype.slice.call(arguments);
         that[type].emit([bag.name].concat(args));
       }
 
@@ -142,11 +114,6 @@ export class NovoDragulaService {
     this.events.forEach(emitter);
   }
 
-  /**
-   * @name domIndexOf
-   * @param child
-   * @param parent
-   */
   domIndexOf(child, parent) {
     return Array.prototype.indexOf.call(parent.children, child);
   }

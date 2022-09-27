@@ -1,5 +1,6 @@
 // NG2
-import { Component, Input, OnInit, Output, EventEmitter } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 // APP
 import { NovoLabelService } from '../../services/novo-label-service';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
@@ -10,10 +11,12 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
     <div *ngIf="isActive">
       <div>
         <i class="bhi-{{ icon }}" *ngIf="icon" [attr.data-automation-id]="'novo-tip-well-icon-' + name"></i>
-        <p *ngIf="sanitize" [attr.data-automation-id]="'novo-tip-well-tip-' + name">{{ tip }}</p>
-        <p *ngIf="!sanitize" [attr.data-automation-id]="'novo-tip-well-tip-' + name" [innerHTML]="tipWithStyles"></p>
+        <ng-content select="novo-icon"></ng-content>
+        <p *ngIf="sanitize && tip.length" [attr.data-automation-id]="'novo-tip-well-tip-' + name">{{ tip }}</p>
+        <p *ngIf="!sanitize && tipWithStyles" [attr.data-automation-id]="'novo-tip-well-tip-' + name" [innerHTML]="tipWithStyles"></p>
+        <p [attr.data-automation-id]="'novo-tip-well-tip-' + name"><ng-content></ng-content></p>
       </div>
-      <button theme="dialogue" (click)="hideTip()" *ngIf="button" [attr.data-automation-id]="'novo-tip-well-button-' + name">
+      <button theme="dialogue" size="small" (click)="hideTip()" *ngIf="button" [attr.data-automation-id]="'novo-tip-well-button-' + name">
         {{ buttonText }}
       </button>
     </div>
@@ -84,14 +87,11 @@ export class NovoTipWellElement implements OnInit {
     this.localStorageKey = `novo-tw_${this.name}`;
     // Check localStorage for state
     if (this.isLocalStorageEnabled) {
-      let storedValue = JSON.parse(localStorage.getItem(this.localStorageKey));
+      const storedValue = JSON.parse(localStorage.getItem(this.localStorageKey));
       this.isActive = storedValue !== false;
     }
   }
 
-  /**
-   * @name hideTip
-   */
   hideTip() {
     if (this.isLocalStorageEnabled) {
       localStorage.setItem(this.localStorageKey, JSON.stringify(false));

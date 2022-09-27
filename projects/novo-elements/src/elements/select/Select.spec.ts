@@ -1,20 +1,14 @@
 // NG
-import { TestBed, async } from '@angular/core/testing';
-import { FormsModule } from '@angular/forms';
+import { async, TestBed } from '@angular/core/testing';
 // App
+import { NovoLabelService } from '../../services/novo-label-service';
+import { Key } from '../../utils';
 import { NovoSelectElement } from './Select';
 import { NovoSelectModule } from './Select.module';
-import { KeyCodes } from '../../utils/key-codes/KeyCodes';
-import { NovoLabelService } from '../../services/novo-label-service';
 
-const KeyEvent = (code) => {
-  let event: any = document.createEvent('Event');
-  event.keyCode = code;
-  return event;
-};
-
-describe('Elements: NovoSelectElement', () => {
-  let fixture, comp;
+xdescribe('Elements: NovoSelectElement', () => {
+  let fixture;
+  let comp;
 
   beforeEach(async(() => {
     TestBed.configureTestingModule({
@@ -73,7 +67,6 @@ describe('Elements: NovoSelectElement', () => {
       comp.createdItem = false;
       comp.placeholder = mockPlaceholder;
       comp.ngOnChanges();
-      expect();
       expect(comp.selected).toEqual({
         label: mockPlaceholder,
         value: null,
@@ -88,9 +81,13 @@ describe('Elements: NovoSelectElement', () => {
       expect(comp.empty).toEqual(true);
     });
     it('should invoke select', () => {
-      spyOn(comp.onSelect, 'emit');
+      jest.spyOn(comp.onSelect, 'emit');
       comp.createdItem = 'baz';
-      comp.options = [{ label: 'foo', value: 'foo' }, { label: 'bar', value: 'bar' }, { label: 'baz', value: 'baz' }];
+      comp.options = [
+        { label: 'foo', value: 'foo' },
+        { label: 'bar', value: 'bar' },
+        { label: 'baz', value: 'baz' },
+      ];
       comp.ngOnChanges();
       expect(comp.selectedIndex).toEqual(2);
       expect(comp.selected).toEqual({ label: 'baz', value: 'baz', active: true });
@@ -98,12 +95,27 @@ describe('Elements: NovoSelectElement', () => {
       expect(comp.onSelect.emit).toHaveBeenCalledWith({ selected: 'baz' });
     });
     it('should invoke writeValue', () => {
-      spyOn(comp, 'select');
+      jest.spyOn(comp, 'select');
       comp.model = 'bar';
-      comp.options = [{ value: 'foo' }, { value: 'bar' }, { value: 'baz' }];
-      comp.filteredOptions = [{ value: 'foo' }, { value: 'bar' }];
+      comp.options = [
+        { label: 'foo', value: 'foo', readOnly: false },
+        { label: 'bar', value: 'bar', readOnly: false },
+        { label: 'baz', value: 'baz', readOnly: true },
+      ];
       comp.ngOnChanges();
-      expect(comp.select).toHaveBeenCalledWith({ value: 'bar', active: false }, 1, false);
+      expect(comp.select).toHaveBeenCalledWith({ label: 'bar', value: 'bar', readOnly: false, active: false }, 1, false);
+      expect(comp.empty).toEqual(false);
+    });
+    it('should invoke writeValue with readOnly option', () => {
+      jest.spyOn(comp, 'select');
+      comp.model = 'baz';
+      comp.options = [
+        { label: 'foo', value: 'foo', readOnly: false },
+        { label: 'bar', value: 'bar', readOnly: false },
+        { label: 'baz', value: 'baz', readOnly: true },
+      ];
+      comp.ngOnChanges();
+      expect(comp.select).toHaveBeenCalledWith({ label: 'baz', value: 'baz', readOnly: true }, -1, false);
       expect(comp.empty).toEqual(false);
     });
     it('should invoke openPanel', () => {
@@ -118,7 +130,7 @@ describe('Elements: NovoSelectElement', () => {
 
   describe('Function: openPanel', () => {
     it('should call overlay.openPanel', () => {
-      spyOn(comp.overlay, 'openPanel');
+      jest.spyOn(comp.overlay, 'openPanel');
       comp.openPanel();
       expect(comp.overlay.openPanel).toHaveBeenCalled();
     });
@@ -126,7 +138,7 @@ describe('Elements: NovoSelectElement', () => {
 
   describe('Function: closePanel', () => {
     it('should call overlay.closePanel', () => {
-      spyOn(comp.overlay, 'closePanel');
+      jest.spyOn(comp.overlay, 'closePanel');
       comp.closePanel();
       expect(comp.overlay.closePanel).toHaveBeenCalled();
     });
@@ -155,9 +167,21 @@ describe('Elements: NovoSelectElement', () => {
       expect(comp.empty).toEqual(false);
     });
     it('should invoke closePanel', () => {
-      spyOn(comp.overlay, 'closePanel');
+      jest.spyOn(comp.overlay, 'closePanel');
       comp.setValueAndClose({});
       expect(comp.overlay.closePanel).toHaveBeenCalled();
+    });
+    it('should not invoke select or close panel for a disabled item', () => {
+      const mockEvent: any = {
+        value: { id: 1, label: 'one', disabled: true },
+        index: 1,
+      };
+      jest.spyOn(comp.overlay, 'closePanel');
+      comp.setValueAndClose(mockEvent);
+      expect(comp.selectedIndex).toEqual(-1);
+      expect(comp.selected).toBeUndefined();
+      expect(comp.empty).toEqual(true);
+      expect(comp.overlay.closePanel).not.toHaveBeenCalled();
     });
   });
 
@@ -175,22 +199,22 @@ describe('Elements: NovoSelectElement', () => {
       expect(comp.empty).toEqual(false);
     });
     it('should invoke onModelChange', () => {
-      spyOn(comp, 'onModelChange');
+      jest.spyOn(comp, 'onModelChange');
       comp.select({ value: 'foo' }, 1);
       expect(comp.onModelChange).toHaveBeenCalledWith('foo');
     });
     it('should emit onSelect', () => {
-      spyOn(comp.onSelect, 'emit');
+      jest.spyOn(comp.onSelect, 'emit');
       comp.select({ value: 'foo' });
       expect(comp.onSelect.emit).toHaveBeenCalledWith({ selected: 'foo' });
     });
     it('should not invoke onModelChange', () => {
-      spyOn(comp, 'onModelChange');
+      jest.spyOn(comp, 'onModelChange');
       comp.select({ value: 'foo' }, 1, false);
       expect(comp.onModelChange).not.toHaveBeenCalled();
     });
     it('should not emit onSelect', () => {
-      spyOn(comp.onSelect, 'emit');
+      jest.spyOn(comp.onSelect, 'emit');
       comp.select({ value: 'foo' }, 1, false);
       expect(comp.onSelect.emit).not.toHaveBeenCalled();
     });
@@ -211,18 +235,14 @@ describe('Elements: NovoSelectElement', () => {
         active: false,
       });
     });
-    it('should set header', () => {
-      comp.header = {
-        open: true,
-        valid: false,
-        value: 'foo',
-      };
-      comp.clear();
-      expect(comp.header).toEqual({
-        open: false,
-        valid: true,
-        value: '',
+    it('should set active to false on previously selected object', () => {
+      const prevSelected = (comp.selected = {
+        label: 'foo',
+        value: 'bar',
+        active: true,
       });
+      comp.clear();
+      expect(prevSelected.active).toEqual(false);
     });
     it('should set selectedIndex', () => {
       comp.selectedIndex = 0;
@@ -236,36 +256,40 @@ describe('Elements: NovoSelectElement', () => {
     });
   });
 
-  describe('Function: onKeyDown(event)', () => {
+  describe('Function: _handleKeydown(event)', () => {
     xit('should not scroll', () => {});
     it('should close panel', () => {
-      spyOn(comp.overlay, 'closePanel');
-      const mockEvent: any = { keyCode: KeyCodes.ESC };
+      jest.spyOn(comp.overlay, 'closePanel');
+      const mockEvent: any = { key: Key.Escape };
       comp.header.open = true;
-      comp.onKeyDown(mockEvent);
-      mockEvent.keyCode = KeyCodes.TAB;
-      comp.onKeyDown(mockEvent);
+      comp._handleKeydown(mockEvent);
+      mockEvent.key = Key.Tab;
+      comp._handleKeydown(mockEvent);
       expect(comp.overlay.closePanel).toHaveBeenCalledTimes(2);
     });
     it('should save header', () => {
-      const mockEvent: any = { keyCode: KeyCodes.ENTER };
+      const mockEvent: any = { key: Key.Enter };
       comp.header = {
         open: true,
         value: 'foo',
         valid: true,
       };
       comp.headerConfig = { onSave: jasmine.createSpy('onSave') };
-      comp.onKeyDown(mockEvent);
+      comp._handleKeydown(mockEvent);
       expect(comp.headerConfig.onSave).toHaveBeenCalled();
     });
     it('should move selection up', () => {
       const mockEvent: any = {
-        keyCode: KeyCodes.UP,
+        key: Key.ArrowUp,
         preventDefault: jasmine.createSpy('preventDefault'),
       };
       comp.selectedIndex = 1;
       comp.header = { open: true };
-      comp.filteredOptions = [{ value: 'foo', label: 'foo' }, { value: 'bar', label: 'bar' }, { value: 'baz', label: 'baz' }];
+      comp.filteredOptions = [
+        { value: 'foo', label: 'foo' },
+        { value: 'bar', label: 'bar' },
+        { value: 'baz', label: 'baz' },
+      ];
       comp.overlay = {
         overlayRef: {
           overlayElement: {
@@ -277,17 +301,21 @@ describe('Elements: NovoSelectElement', () => {
         panelOpen: true,
       };
       comp.overlay.panelOpen = true;
-      comp.onKeyDown(mockEvent);
+      comp._handleKeydown(mockEvent);
       expect(comp.selectedIndex).toEqual(0);
     });
     it('should move selection down', () => {
       const mockEvent: any = {
-        keyCode: KeyCodes.DOWN,
+        key: Key.ArrowDown,
         preventDefault: jasmine.createSpy('preventDefault'),
       };
       comp.selectedIndex = 1;
       comp.header = { open: true };
-      comp.filteredOptions = [{ value: 'foo', label: 'foo' }, { value: 'bar', label: 'bar' }, { value: 'baz', label: 'baz' }];
+      comp.filteredOptions = [
+        { value: 'foo', label: 'foo' },
+        { value: 'bar', label: 'bar' },
+        { value: 'baz', label: 'baz' },
+      ];
       comp.overlay = {
         overlayRef: {
           overlayElement: {
@@ -298,7 +326,7 @@ describe('Elements: NovoSelectElement', () => {
         },
         panelOpen: true,
       };
-      comp.onKeyDown(mockEvent);
+      comp._handleKeydown(mockEvent);
       expect(comp.selectedIndex).toEqual(2);
     });
     xit('should toggle header open', () => {});

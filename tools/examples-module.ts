@@ -1,7 +1,7 @@
+import fs from 'fs';
 import { sync as glob } from 'glob';
-import * as fs from 'fs';
-import * as path from 'path';
-import * as ts from 'typescript';
+import path from 'path';
+import ts from 'typescript';
 
 interface ExampleMetadata {
   component: string;
@@ -32,17 +32,14 @@ const examplesPath = path.join('./projects/', 'novo-examples', 'src');
 const outputModuleFilename = path.join(examplesPath, 'examples.module.ts');
 
 /** Build ES module import statements for the examples. */
-function buildImportsTemplate(metadata: ExampleMetadata): string {
+function buildImportsTemplate(metadata: ExampleMetadata, prefix = 'import'): string {
   const components = metadata.additionalComponents.concat(metadata.component);
 
   // Create a relative path to the source file of the current example.
   // The relative path will be used inside of a TypeScript import statement.
-  const relativeSrcPath = path
-    .relative(examplesPath, metadata.sourcePath)
-    .replace(/\\/g, '/')
-    .replace('.ts', '');
+  const relativeSrcPath = path.relative(examplesPath, metadata.sourcePath).replace(/\\/g, '/').replace('.ts', '');
 
-  return `import {${components.join(',')}} from './${relativeSrcPath}';
+  return `${prefix} { ${components.join(',')} } from './${relativeSrcPath}';
 `;
 }
 
@@ -99,17 +96,21 @@ function generateExampleNgModule(extractedMetadata: ExampleMetadata[]): string {
   return `
 /* tslint:disable */
 /** DO NOT MANUALLY EDIT THIS FILE, IT IS GENERATED VIA GULP 'build-examples-module' */
-import {NgModule} from '@angular/core';
-import {FormsModule, ReactiveFormsModule} from '@angular/forms';
-import {CommonModule} from '@angular/common';
-import {NovoElementsModule} from 'novo-elements';
-import { ChomskyModule } from 'chomsky';
+import { NgModule } from '@angular/core';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { CommonModule } from '@angular/common';
+import { NovoElementsModule } from 'novo-elements';
 
 // Examples
 ${extractedMetadata
-    .map((r) => buildImportsTemplate(r))
-    .join('')
-    .trim()}
+  .map((r) => buildImportsTemplate(r))
+  .join('')
+  .trim()}
+
+${extractedMetadata
+  .map((r) => buildImportsTemplate(r, 'export'))
+  .join('')
+  .trim()}
 
 export interface LiveExample {
   title: string;
@@ -143,8 +144,7 @@ export const EXAMPLE_LIST = [
     FormsModule,
     ReactiveFormsModule,
     CommonModule,
-    NovoElementsModule,
-    ChomskyModule
+    NovoElementsModule
   ]
 })
 export class NovoExamplesModule { }
@@ -167,7 +167,7 @@ function convertToDashCase(name: string): string {
 function parseExampleMetadata(fileName: string, sourceContent: string): ParsedMetadataResults {
   const sourceFile = ts.createSourceFile(fileName, sourceContent, ts.ScriptTarget.Latest, false, ts.ScriptKind.TS);
 
-  const metas: any[] = [];
+  const metas = [];
 
   const visit = (node: any): void => {
     if (node.kind === ts.SyntaxKind.ClassDeclaration) {

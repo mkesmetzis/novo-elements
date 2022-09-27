@@ -1,3 +1,4 @@
+import { CdkCell, CdkCellDef, CdkColumnDef, CdkHeaderCell, CdkHeaderCellDef } from '@angular/cdk/table';
 import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
@@ -10,15 +11,12 @@ import {
   OnInit,
   Optional,
   Renderer2,
-  ViewChild,
 } from '@angular/core';
-import { CdkCell, CdkCellDef, CdkColumnDef, CdkHeaderCell, CdkHeaderCellDef } from '@angular/cdk/table';
 import { Subscription } from 'rxjs';
-
-import { NovoSelection } from './sort';
-import { SimpleTableActionColumn, SimpleTableActionColumnOption, SimpleTableColumn } from './interfaces';
-import { Helpers } from '../../utils/Helpers';
 import { NovoLabelService } from '../../services/novo-label-service';
+import { Helpers } from '../../utils/Helpers';
+import { SimpleTableActionColumn, SimpleTableActionColumnOption, SimpleTableColumn } from './interfaces';
+import { NovoSelection } from './sort';
 
 /** Workaround for https://github.com/angular/angular/issues/17849 */
 export const _NovoCellDef = CdkCellDef;
@@ -31,13 +29,17 @@ export const _NovoCell = CdkCell;
   selector: '[novoSimpleCellDef]',
   providers: [{ provide: CdkCellDef, useExisting: NovoSimpleCellDef }],
 })
-export class NovoSimpleCellDef extends _NovoCellDef {}
+export class NovoSimpleCellDef extends _NovoCellDef {
+  // TODO: add explicit constructor
+}
 
 @Directive({
   selector: '[novoSimpleHeaderCellDef]',
   providers: [{ provide: CdkHeaderCellDef, useExisting: NovoSimpleHeaderCellDef }],
 })
-export class NovoSimpleHeaderCellDef extends _NovoHeaderCellDef {}
+export class NovoSimpleHeaderCellDef extends _NovoHeaderCellDef {
+  // TODO: add explicit constructor
+}
 
 @Directive({
   selector: '[novoSimpleColumnDef]',
@@ -45,7 +47,27 @@ export class NovoSimpleHeaderCellDef extends _NovoHeaderCellDef {}
 })
 export class NovoSimpleColumnDef extends _NovoColumnDef {
   @Input('novoSimpleColumnDef')
-  name: string;
+  get name(): string {
+    return this._name;
+  }
+  set name(name: string) {
+    this._setNameInput(name);
+  }
+  /**
+   * This has been extracted to a util because of TS 4 and VE.
+   * View Engine doesn't support property rename inheritance.
+   * TS 4.0 doesn't allow properties to override accessors or vice-versa.
+   * @docs-private
+   */
+  protected _setNameInput(value: string) {
+    // If the directive is set without a name (updated programatically), then this setter will
+    // trigger with an empty string and should not overwrite the programatically set value.
+    if (value) {
+      this._name = value;
+      this.cssClassFriendlyName = value.replace(/[^a-z0-9_-]/gi, '-');
+      this._updateColumnCssClassName();
+    }
+  }
 }
 
 @Directive({
@@ -129,9 +151,7 @@ export class NovoSimpleCheckboxHeaderCell extends _NovoHeaderCell implements OnD
 
 @Component({
   selector: 'novo-simple-cell',
-  template: `
-    <span [class.clickable]="!!column.onClick" (click)="onClick($event)" #span>{{ column.renderer(row) }}</span>
-  `,
+  template: ` <span [class.clickable]="!!column.onClick" (click)="onClick($event)" #span>{{ column.renderer(row) }}</span> `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class NovoSimpleCell<T> extends _NovoCell implements OnInit {
@@ -142,9 +162,6 @@ export class NovoSimpleCell<T> extends _NovoCell implements OnInit {
   public row: any;
   @Input()
   public column: SimpleTableColumn<T>;
-
-  @ViewChild('span')
-  private spanElement: ElementRef;
 
   constructor(columnDef: CdkColumnDef, private elementRef: ElementRef, private renderer: Renderer2) {
     super(columnDef, elementRef);
@@ -185,9 +202,7 @@ export class NovoSimpleCell<T> extends _NovoCell implements OnInit {
 
 @Component({
   selector: 'novo-simple-checkbox-cell',
-  template: `
-    <novo-checkbox [ngModel]="selected" (ngModelChange)="toggle($event)"></novo-checkbox>
-  `,
+  template: ` <novo-checkbox [ngModel]="selected" (ngModelChange)="toggle($event)"></novo-checkbox> `,
 })
 export class NovoSimpleCheckboxCell extends _NovoCell implements OnDestroy, OnInit {
   @HostBinding('attr.role')
@@ -231,11 +246,11 @@ export class NovoSimpleCheckboxCell extends _NovoCell implements OnDestroy, OnIn
   selector: 'novo-simple-action-cell',
   template: `
     <ng-container *ngIf="!column.options">
-      <button theme="icon" [icon]="column.icon" (click)="column.onClick(row)" [disabled]="isDisabled(column, row)"></button>
+      <novo-button theme="icon" [icon]="column.icon" (click)="column.onClick(row)" [disabled]="isDisabled(column, row)"></novo-button>
     </ng-container>
     <ng-container *ngIf="column.options">
       <novo-dropdown parentScrollSelector=".novo-simple-table" containerClass="novo-table-dropdown-cell">
-        <button type="button" theme="dialogue" icon="collapse" inverse>{{ column.label || labels.actions }}</button>
+        <novo-button type="button" theme="dialogue" icon="collapse" inverse>{{ column.label || labels.actions }}</novo-button>
         <list>
           <item *ngFor="let option of column.options" (action)="option.onClick(row)" [disabled]="isDisabled(option, row)">
             <span [attr.data-automation-id]="option.label">{{ option.label }}</span>

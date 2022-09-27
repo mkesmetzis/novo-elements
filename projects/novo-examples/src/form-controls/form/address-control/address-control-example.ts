@@ -1,7 +1,6 @@
 import { Component } from '@angular/core';
-
 // Vendor
-import { FormUtils, AddressControl, findByCountryId } from 'novo-elements';
+import { AddressControl, findByCountryId, FormUtils } from 'novo-elements';
 
 /**
  * @title Address Control Example
@@ -125,7 +124,7 @@ export class AddressControlExample {
             },
             getLabels: (value: number) => {
               return new Promise((resolve: any) => {
-                let country: any = findByCountryId(value);
+                const country: any = findByCountryId(value);
                 if (country) {
                   resolve({ value: country.id, label: country.name });
                 } else {
@@ -152,7 +151,7 @@ export class AddressControlExample {
     this.addressForm = formUtils.toFormGroup(this.addressFormControls);
   }
 
-  getStateOptions(filter: string = '', countryID: number): any[] {
+  getStateOptions(filter: string = '', countryID: number) {
     let states: any[] = this.states;
     if (countryID) {
       states = states.filter((state: any) => state.countryId === countryID);
@@ -164,7 +163,7 @@ export class AddressControlExample {
   }
 
   getStateLabel(value: number): string {
-    let state: any = this.states.find((s: any) => {
+    const state: any = this.states.find((s: any) => {
       return s.value === value;
     });
     if (state && state.label) {
@@ -173,7 +172,7 @@ export class AddressControlExample {
     return '';
   }
 
-  getCountryOptions(filter?: string): any[] {
+  getCountryOptions(filter?: string) {
     let countries: any = [
       {
         value: 2356,

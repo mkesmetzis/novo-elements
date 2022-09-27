@@ -1,38 +1,43 @@
+import { animate, state as animState, style, transition, trigger } from '@angular/animations';
+import { coerceBooleanProperty } from '@angular/cdk/coercion';
 import {
+  AfterContentInit,
   ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
+  ContentChildren,
+  ElementRef,
+  EventEmitter,
   HostBinding,
   Input,
-  ViewChild,
-  EventEmitter,
-  AfterContentInit,
-  ChangeDetectorRef,
   OnDestroy,
-  ContentChildren,
-  QueryList,
-  ViewChildren,
-  TemplateRef,
-  ElementRef,
   Output,
+  QueryList,
+  TemplateRef,
+  ViewChild,
+  ViewChildren,
 } from '@angular/core';
-import { coerceBooleanProperty } from '@angular/cdk/coercion';
 import { Subscription } from 'rxjs';
-import { animate, state as animState, style, transition, trigger } from '@angular/animations';
-
-import {
-  IDataTableColumn,
-  IDataTablePaginationOptions,
-  IDataTableSearchOptions,
-  IDataTableService,
-  IDataTablePreferences,
-  IDataTableFilter,
-} from './interfaces';
-import { DataTableSource } from './data-table.source';
 import { NovoLabelService } from '../../services/novo-label-service';
-import { DataTableState } from './state/data-table-state.service';
-import { NovoTemplate } from '../common/novo-template/novo-template.directive';
 import { notify } from '../../utils/notifier/notifier.util';
+import { NovoTemplate } from '../common/novo-template/novo-template.directive';
+import { NovoDataTableCellHeader } from './cell-headers/data-table-header-cell.component';
+import { DataTableSource } from './data-table.source';
+import { NOVO_DATA_TABLE_REF } from './data-table.token';
+import {
+  IDataTableChangeEvent,
+  IDataTableColumn,
+  IDataTableFilter,
+  IDataTablePaginationOptions,
+  IDataTablePreferences,
+  IDataTableSearchOptions,
+  IDataTableSelectionOption,
+  IDataTableService,
+  IDataTableSort,
+} from './interfaces';
+import { ListInteractionDictionary, ListInteractionEvent } from './ListInteractionTypes';
 import { StaticDataTableService } from './services/static-data-table.service';
+import { DataTableState } from './state/data-table-state.service';
 
 @Component({
   selector: 'novo-data-table',
@@ -66,6 +71,8 @@ import { StaticDataTableService } from './services/static-data-table.service';
         [pageSize]="paginationOptions.pageSize"
         [pageSizeOptions]="paginationOptions.pageSizeOptions"
         [dataFeatureId]="paginatorDataFeatureId"
+        [canSelectAll]="canSelectAll"
+        [allMatchingSelected]="allMatchingSelected"
       >
       </novo-data-table-pagination>
       <div class="novo-data-table-actions" *ngIf="templates['customActions']">
@@ -96,8 +103,12 @@ import { StaticDataTableService } from './services/static-data-table.service';
           [hidden]="dataSource?.totallyEmpty && !state.userFiltered"
         >
           <ng-container cdkColumnDef="selection">
-            <novo-data-table-checkbox-header-cell *cdkHeaderCellDef></novo-data-table-checkbox-header-cell>
-            <novo-data-table-checkbox-cell *cdkCellDef="let row; let i = index" [row]="row"></novo-data-table-checkbox-cell>
+            <novo-data-table-checkbox-header-cell *cdkHeaderCellDef [maxSelected]="maxSelected"></novo-data-table-checkbox-header-cell>
+            <novo-data-table-checkbox-cell
+              *cdkCellDef="let row; let i = index"
+              [row]="row"
+              [maxSelected]="maxSelected"
+            ></novo-data-table-checkbox-cell>
           </ng-container>
           <ng-container cdkColumnDef="expand">
             <novo-data-table-expand-header-cell *cdkHeaderCellDef></novo-data-table-expand-header-cell>
@@ -152,6 +163,15 @@ import { StaticDataTableService } from './services/static-data-table.service';
         >
           <div class="novo-data-table-empty-message">
             <ng-container *ngTemplateOutlet="templates['noResultsMessage'] || templates['defaultNoResultsMessage']"></ng-container>
+          </div>
+        </div>
+        <div
+          class="novo-data-table-no-more-results-container"
+          [style.left.px]="scrollLeft"
+          *ngIf="!dataSource?.totallyEmpty && dataSource?.currentlyEmpty && !state.userFiltered && !dataSource?.loading && !loading && !dataSource.pristine"
+        >
+          <div class="novo-data-table-empty-message">
+            <ng-container *ngTemplateOutlet="templates['noMoreResultsMessage'] || templates['defaultNoMoreResultsMessage']"></ng-container>
           </div>
         </div>
       </div>
@@ -212,30 +232,37 @@ import { StaticDataTableService } from './services/static-data-table.service';
       }}</a>
     </ng-template>
     <ng-template novoTemplate="buttonCellTemplate" let-row let-col="col">
-      <p [tooltip]="col?.action?.tooltip" tooltipPosition="right" [attr.data-feature-id]="col?.attributes?.dataFeatureId">
-        <i
-          class="bhi-{{ col?.action?.icon }} data-table-icon"
-          (click)="col.handlers?.click({ originalEvent: $event, row: row })"
-          [class.disabled]="isDisabled(col, row)"
-        ></i>
-      </p>
+      <novo-button
+        size="small"
+        theme="icon"
+        [tooltip]="col?.action?.tooltip"
+        tooltipPosition="right"
+        [attr.data-feature-id]="col?.attributes?.dataFeatureId"
+        [disabled]="isDisabled(col, row)"
+        (click)="col.handlers?.click({ originalEvent: $event, row: row })"
+      >
+        <novo-icon>{{ col?.action?.icon }}</novo-icon>
+      </novo-button>
     </ng-template>
     <ng-template novoTemplate="dropdownCellTemplate" let-row let-col="col">
       <novo-dropdown parentScrollSelector=".novo-data-table-container" containerClass="novo-data-table-dropdown">
-        <button type="button" theme="dialogue" [icon]="col.action.icon" inverse>{{ col.label }}</button>
-        <list>
-          <item
+        <novo-button type="button" theme="dialogue" [icon]="col.action.icon" inverse>{{ col.label }}</novo-button>
+        <novo-optgroup>
+          <novo-option
             *ngFor="let option of col?.action?.options"
-            (action)="option.handlers.click({ originalEvent: $event?.originalEvent, row: row })"
+            (click)="option.handlers.click({ originalEvent: $event?.originalEvent, row: row })"
             [disabled]="isDisabled(option, row)"
           >
             <span [attr.data-automation-id]="option.label">{{ option.label }}</span>
-          </item>
-        </list>
+          </novo-option>
+        </novo-optgroup>
       </novo-dropdown>
     </ng-template>
     <ng-template novoTemplate="defaultNoResultsMessage">
       <h4><i class="bhi-search-question"></i> {{ labels.noMatchingRecordsMessage }}</h4>
+    </ng-template>
+    <ng-template novoTemplate="defaultNoMoreResultsMessage">
+      <h4><i class="bhi-search-question"></i> {{ labels.noMoreRecordsMessage }}</h4>
     </ng-template>
     <ng-template novoTemplate="defaultEmptyMessage">
       <h4><i class="bhi-search-question"></i> {{ labels.emptyTableMessage }}</h4>
@@ -250,13 +277,14 @@ import { StaticDataTableService } from './services/static-data-table.service';
     <ng-content></ng-content>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [DataTableState],
+  providers: [DataTableState, { provide: NOVO_DATA_TABLE_REF, useExisting: NovoDataTable }],
 })
 export class NovoDataTable<T> implements AfterContentInit, OnDestroy {
   @HostBinding('class.global-search-hidden') globalSearchHiddenClassToggle: boolean = false;
 
   @ContentChildren(NovoTemplate) customTemplates: QueryList<NovoTemplate>;
   @ViewChildren(NovoTemplate) defaultTemplates: QueryList<NovoTemplate>;
+  @ViewChildren(NovoDataTableCellHeader) cellHeaders: QueryList<NovoDataTableCellHeader<T>>;
   @ViewChild('novoDataTableContainer') novoDataTableContainer: ElementRef;
   @Output() resized: EventEmitter<IDataTableColumn<T>> = new EventEmitter();
 
@@ -266,7 +294,7 @@ export class NovoDataTable<T> implements AfterContentInit, OnDestroy {
       if (this.name !== 'novo-data-table') {
         this.preferencesChanged.emit({
           name: this.name,
-          displayedColumns: displayedColumns,
+          displayedColumns,
         });
       } else {
         notify('Must have [name] set on data-table to use preferences!');
@@ -288,6 +316,7 @@ export class NovoDataTable<T> implements AfterContentInit, OnDestroy {
 
   @Input() paginationOptions: IDataTablePaginationOptions;
   @Input() searchOptions: IDataTableSearchOptions;
+  @Input() selectionOptions: IDataTableSelectionOption[];
   @Input() defaultSort: { id: string; value: string };
   @Input() name = 'novo-data-table';
   @Input() allowMultipleFilters = false;
@@ -298,6 +327,9 @@ export class NovoDataTable<T> implements AfterContentInit, OnDestroy {
   @Input() templates: { [key: string]: TemplateRef<any> } = {};
   @Input() fixedHeader = false;
   @Input() paginatorDataFeatureId: string;
+  @Input() maxSelected: number = undefined;
+  @Input() canSelectAll: boolean = false;
+  @Input() allMatchingSelected = false;
 
   @Input()
   set dataTableService(service: IDataTableService<T>) {
@@ -312,7 +344,7 @@ export class NovoDataTable<T> implements AfterContentInit, OnDestroy {
   @Input()
   set rows(rows: T[]) {
     this.loading = false;
-    let service = new StaticDataTableService(rows);
+    const service = new StaticDataTableService(rows);
     this.dataSource = new DataTableSource<T>(service, this.state, this.ref);
     this.ref.detectChanges();
   }
@@ -327,7 +359,7 @@ export class NovoDataTable<T> implements AfterContentInit, OnDestroy {
       // Re-subscribe
       this.outsideFilterSubscription = outsideFilter.subscribe((filter: any) => {
         this.state.outsideFilter = filter;
-        this.state.updates.next({ globalSearch: this.state.globalSearch, filter: this.state.filter, sort: this.state.sort });
+        this.state.updates.next({ globalSearch: this.state.globalSearch, filter: this.state.filter, sort: this.state.sort, where: this.state.where });
         this.ref.markForCheck();
       });
     }
@@ -343,7 +375,7 @@ export class NovoDataTable<T> implements AfterContentInit, OnDestroy {
       // Re-subscribe
       this.refreshSubscription = refreshSubject.subscribe((filter: any) => {
         this.state.isForceRefresh = true;
-        this.state.updates.next({ globalSearch: this.state.globalSearch, filter: this.state.filter, sort: this.state.sort });
+        this.state.updates.next({ globalSearch: this.state.globalSearch, filter: this.state.filter, sort: this.state.sort, where: this.state.where });
         this.ref.markForCheck();
       });
     }
@@ -353,6 +385,7 @@ export class NovoDataTable<T> implements AfterContentInit, OnDestroy {
   set columns(columns: IDataTableColumn<T>[]) {
     this._columns = columns;
     this.configureColumns();
+    this.performInteractions('init');
   }
   get columns(): IDataTableColumn<T>[] {
     return this._columns;
@@ -396,6 +429,10 @@ export class NovoDataTable<T> implements AfterContentInit, OnDestroy {
   private _hideGlobalSearch: boolean = true;
 
   @Output() preferencesChanged: EventEmitter<IDataTablePreferences> = new EventEmitter<IDataTablePreferences>();
+  @Output() allSelected: EventEmitter<{ allSelected: boolean; selectedCount: number }> = new EventEmitter<{
+    allSelected: boolean;
+    selectedCount: number;
+  }>();
 
   public dataSource: DataTableSource<T>;
   public loading: boolean = true;
@@ -410,6 +447,7 @@ export class NovoDataTable<T> implements AfterContentInit, OnDestroy {
   private resetSubscription: Subscription;
   private paginationSubscription: Subscription;
   private sortFilterSubscription: Subscription;
+  private allMatchingSelectedSubscription: Subscription;
   private _columns: IDataTableColumn<T>[];
   private scrollListenerHandler: any;
   private initialized: boolean = false;
@@ -424,16 +462,22 @@ export class NovoDataTable<T> implements AfterContentInit, OnDestroy {
     return this.loading || (this.dataSource && this.dataSource.loading);
   }
 
+  @Input() listInteractions: ListInteractionDictionary;
+
   constructor(public labels: NovoLabelService, private ref: ChangeDetectorRef, public state: DataTableState<T>) {
     this.scrollListenerHandler = this.scrollListener.bind(this);
     this.sortFilterSubscription = this.state.sortFilterSource.subscribe(
-      (event: {
-        sort: { id: string; value: string; transform?: Function };
-        filter: IDataTableFilter | IDataTableFilter[];
-        globalSearch: string;
-      }) => {
+      (event: IDataTableChangeEvent) => {
         if (this.name !== 'novo-data-table') {
-          this.preferencesChanged.emit({ name: this.name, sort: event.sort, filter: event.filter, globalSearch: event.globalSearch });
+          this.preferencesChanged.emit({
+            name: this.name,
+            sort: event.sort,
+            filter: event.filter,
+            globalSearch: event.globalSearch,
+            where: event.where,
+            savedSearchName: event.savedSearchName,
+          });
+          this.performInteractions('change');
         } else {
           notify('Must have [name] set on data-table to use preferences!');
         }
@@ -453,23 +497,38 @@ export class NovoDataTable<T> implements AfterContentInit, OnDestroy {
         this.ref.detectChanges();
       }, 300);
     });
+    this.allMatchingSelectedSubscription = this.state.allMatchingSelectedSource.subscribe((event: boolean) => {
+      this.allMatchingSelected = event;
+    });
+  }
+
+  public modifyCellHeaderMultiSelectFilterOptions(column: string, newOptions: { value: any; label: string }[]): void {
+    const header = this.cellHeaders.find((cellHeader) => cellHeader.id === column);
+    if (header) {
+      if (header.config && header.config.filterConfig && header.config.filterConfig.options) {
+        const filterOptions: any[] = header.config.filterConfig.options;
+        const optionsToKeep = filterOptions.filter(
+          (opt) =>
+            header.isSelected(opt, header.multiSelectedOptions) &&
+            !newOptions.find((newOpt) => opt.value && newOpt.value && newOpt.value === opt.value),
+        );
+        header.config.filterConfig.options = [...optionsToKeep, ...newOptions];
+      } else {
+        header.config.filterConfig.options = newOptions;
+      }
+      header.setupFilterOptions();
+      header.changeDetectorRef.markForCheck();
+    }
   }
 
   public ngOnDestroy(): void {
-    if (this.outsideFilterSubscription) {
-      this.outsideFilterSubscription.unsubscribe();
-    }
+    this.outsideFilterSubscription?.unsubscribe();
+    this.refreshSubscription?.unsubscribe();
+    this.resetSubscription?.unsubscribe();
+    this.sortFilterSubscription?.unsubscribe();
+    this.allMatchingSelectedSubscription?.unsubscribe();
     if (this.novoDataTableContainer) {
       (this.novoDataTableContainer.nativeElement as Element).removeEventListener('scroll', this.scrollListenerHandler);
-    }
-    if (this.refreshSubscription) {
-      this.refreshSubscription.unsubscribe();
-    }
-    if (this.resetSubscription) {
-      this.resetSubscription.unsubscribe();
-    }
-    if (this.sortFilterSubscription) {
-      this.sortFilterSubscription.unsubscribe();
     }
   }
 
@@ -505,10 +564,10 @@ export class NovoDataTable<T> implements AfterContentInit, OnDestroy {
     }
     this.state.page = this.paginationOptions ? this.paginationOptions.page : undefined;
     this.state.pageSize = this.paginationOptions ? this.paginationOptions.pageSize : undefined;
+    this.state.selectionOptions = this.selectionOptions ?? undefined;
 
     // Scrolling inside table
     (this.novoDataTableContainer.nativeElement as Element).addEventListener('scroll', this.scrollListenerHandler);
-
     this.initialized = true;
     this.ref.markForCheck();
   }
@@ -516,7 +575,7 @@ export class NovoDataTable<T> implements AfterContentInit, OnDestroy {
   public onSearchChange(term: string): void {
     this.state.globalSearch = term;
     this.state.reset(false, true);
-    this.state.updates.next({ globalSearch: term, filter: this.state.filter, sort: this.state.sort });
+    this.state.updates.next({ globalSearch: term, filter: this.state.filter, sort: this.state.sort, where: this.state.where });
   }
 
   public trackColumnsBy(index: number, item: IDataTableColumn<T>) {
@@ -541,14 +600,14 @@ export class NovoDataTable<T> implements AfterContentInit, OnDestroy {
   }
 
   public expandRow(row: T): void {
-    let expanded = this.isExpanded(row);
+    const expanded = this.isExpanded(row);
 
     if (expanded) {
       this.state.expandedRows.delete(`${row[this.rowIdentifier]}`);
     } else {
       this.state.expandedRows.add(`${row[this.rowIdentifier]}`);
     }
-    this.state.onExpandChange(((row as unknown) as { id: number }).id);
+    this.state.onExpandChange((row as unknown as { id: number }).id);
   }
 
   public expandRows(expand: boolean): void {
@@ -578,14 +637,22 @@ export class NovoDataTable<T> implements AfterContentInit, OnDestroy {
     return this.state.selectedRows.has(`${row[this.rowIdentifier]}`);
   }
 
-  public selectRow(row: T): void {
-    let selected = this.isSelected(row);
-
+  public selectRow(row: T, origin?: string): void {
+    const selected = this.isSelected(row);
     if (selected) {
       this.state.selectedRows.delete(`${row[this.rowIdentifier]}`);
     } else {
-      this.state.selectedRows.set(`${row[this.rowIdentifier]}`, row);
+      if (this.canSelectAll && this.allMatchingSelected && ['onClick'].includes(origin)) {
+        // When all matching records are selected the user could be on another page where all rows only appear selected
+        // Need to reset the rows that are actually selected, select rows on the current page and deselect the chosen record
+        this.state.selectedRows.clear();
+        this.selectRows(true);
+        this.state.selectedRows.delete(`${row[this.rowIdentifier]}`);
+      } else {
+        this.state.selectedRows.set(`${row[this.rowIdentifier]}`, row);
+      }
     }
+    this.state.allMatchingSelectedSource.next(false);
     this.state.onSelectionChange();
   }
 
@@ -601,6 +668,12 @@ export class NovoDataTable<T> implements AfterContentInit, OnDestroy {
   }
 
   public allCurrentRowsSelected(): boolean {
+    if (this.allMatchingSelected) {
+      return true;
+    }
+    if (!this.dataSource?.data?.length) {
+      return false;
+    }
     for (let i = 0; i < (this.dataSource.data || []).length; i++) {
       if (!this.isSelected((this.dataSource.data || [])[i])) {
         return false;
@@ -618,17 +691,13 @@ export class NovoDataTable<T> implements AfterContentInit, OnDestroy {
           column.initialResizable = undefined;
         }
       });
-      const resizableColumns: string[] = this.displayedColumns.filter(
-        (name: string): boolean => {
-          return (
-            this.columns.findIndex(
-              (column: IDataTableColumn<T>): boolean => {
-                return column.resizable && column.id === name;
-              },
-            ) !== -1
-          );
-        },
-      );
+      const resizableColumns: string[] = this.displayedColumns.filter((name: string): boolean => {
+        return (
+          this.columns.findIndex((column: IDataTableColumn<T>): boolean => {
+            return column.resizable && column.id === name;
+          }) !== -1
+        );
+      });
       if (resizableColumns && resizableColumns.length > 0) {
         const lastResizableColumn: IDataTableColumn<T> = this.columns.find((column: IDataTableColumn<T>) => {
           return column.id === resizableColumns[resizableColumns.length - 1];
@@ -683,10 +752,22 @@ export class NovoDataTable<T> implements AfterContentInit, OnDestroy {
 
   private scrollListener(): void {
     const target: Element = this.novoDataTableContainer.nativeElement as Element;
-    let left: number = target.scrollLeft;
+    const left: number = target.scrollLeft;
     if (left !== this.scrollLeft) {
       this.scrollLeft = target.scrollLeft;
     }
     this.ref.markForCheck();
+  }
+
+  performInteractions(event: ListInteractionEvent): void {
+    if (this.listInteractions) {
+      for (const column of this.columns) {
+        const allListColumnInteractions = this.listInteractions[column.id];
+        const listColumnInteraction = allListColumnInteractions && allListColumnInteractions.find((int) => int.event.includes(event));
+        if (listColumnInteraction) {
+          listColumnInteraction.script(this, column.id);
+        }
+      }
+    }
   }
 }

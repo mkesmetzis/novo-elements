@@ -1,10 +1,11 @@
 // NG2
-import { Component, EventEmitter, Output, ElementRef, Input, forwardRef, OnInit, OnDestroy } from '@angular/core';
-import { NG_VALUE_ACCESSOR, ControlValueAccessor } from '@angular/forms';
+import { Component, ElementRef, EventEmitter, forwardRef, Input, OnDestroy, OnInit, Output } from '@angular/core';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 // Vendor
+// organize-imports-ignore
 import 'brace/index';
-import 'brace/theme/chrome';
 import 'brace/mode/javascript';
+import 'brace/theme/chrome';
 import 'brace/ext/language_tools.js';
 // APP
 import { Helpers } from '../../utils/Helpers';
@@ -74,7 +75,7 @@ export class NovoAceEditor implements ControlValueAccessor, OnInit, OnDestroy {
   }
 
   private initializeEditor() {
-    let el = this.elementRef.nativeElement;
+    const el = this.elementRef.nativeElement;
     this.editor = ace.edit(el);
     this.editor.$blockScrolling = Infinity;
   }
@@ -93,8 +94,7 @@ export class NovoAceEditor implements ControlValueAccessor, OnInit, OnDestroy {
   }
 
   private updateText() {
-    let newVal = this.editor.getValue(),
-      that = this;
+    const newVal = this.editor.getValue();
 
     if (newVal === this.oldText) {
       return;

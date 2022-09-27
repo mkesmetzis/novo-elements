@@ -1,5 +1,3 @@
-import { FocusMonitor } from '@angular/cdk/a11y';
-import { ENTER, SPACE } from '@angular/cdk/keycodes';
 import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
@@ -11,8 +9,9 @@ import {
   OnDestroy,
   ViewEncapsulation,
 } from '@angular/core';
-import { Subscription, merge } from 'rxjs';
+import { merge, Subscription } from 'rxjs';
 import { filter } from 'rxjs/operators';
+import { Key } from '../../utils';
 import { novoExpansionAnimations } from './expansion-animations';
 import { NovoExpansionPanel } from './expansion-panel';
 
@@ -103,10 +102,10 @@ export class NovoExpansionPanelHeader implements OnDestroy {
 
   /** Handle keydown event calling to toggle() if appropriate. */
   _keydown(event: KeyboardEvent) {
-    switch (event.keyCode) {
+    switch (event.key) {
       // Toggle for space and enter keys.
-      case SPACE:
-      case ENTER:
+      case Key.Space:
+      case Key.Enter:
         event.preventDefault();
         this._toggle();
         break;

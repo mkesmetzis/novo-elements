@@ -1,14 +1,12 @@
 // NG2
-import { TestBed, async } from '@angular/core/testing';
 import { Component, ComponentFactory, ComponentFactoryResolver } from '@angular/core';
+import { async, TestBed } from '@angular/core/testing';
 // App
 import { PopOverDirective } from './PopOver';
 
 @Component({
   selector: 'test-component',
-  template: `
-    <div popover=""></div>
-  `,
+  template: ` <div popover=""></div> `,
 })
 class TestComponent {}
 
@@ -30,7 +28,7 @@ describe('Elements: PopOverDirective', () => {
     });
 
     describe('Class: ', () => {
-      let mockComponentFactoryResolver: ComponentFactoryResolver = {
+      const mockComponentFactoryResolver: ComponentFactoryResolver = {
         resolveComponentFactory<T>(c: { new (...args: any[]) }): ComponentFactory<T> {
           // This was a monster to mock...
           if (c) {
@@ -40,7 +38,7 @@ describe('Elements: PopOverDirective', () => {
         },
       };
 
-      let component = new PopOverDirective(directive, mockComponentFactoryResolver);
+      const component = new PopOverDirective(directive, mockComponentFactoryResolver);
       describe('Method: ngOnChanges()', () => {
         it('should be defined.', () => {
           expect(component.ngOnChanges).toBeDefined();

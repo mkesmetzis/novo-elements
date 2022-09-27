@@ -1,10 +1,10 @@
 // NG2
-import { FormControl, Validators } from '@angular/forms';
 import { EventEmitter } from '@angular/core';
+import { FormControl, Validators } from '@angular/forms';
+import { notify } from '../../utils/notifier/notifier.util';
+import type { IMaskOptions } from './Control';
 // APP
 import { NovoControlConfig } from './FormControls';
-import { notify } from '../../utils/notifier/notifier.util';
-import { IMaskOptions } from './Control';
 
 export class NovoFormControl extends FormControl {
   displayValueChanges: EventEmitter<any> = new EventEmitter<any>();
@@ -22,12 +22,13 @@ export class NovoFormControl extends FormControl {
   removeTooltipArrow?: boolean;
   tooltipAutoPosition?: boolean;
   initialValue: any;
-  valueHistory: any[] = [];
+  valueHistory = [];
   validators: any;
   config: any;
   sortOrder: number;
   controlType: string;
   placeholder: string;
+  minimal: boolean;
   multiple: boolean;
   headerConfig: any;
   optionsType: string;
@@ -48,6 +49,7 @@ export class NovoFormControl extends FormControl {
   currencyFormat?: string;
   startDate?: Date | Number;
   endDate?: Date | Number;
+  weekStart?: number;
   textMaskEnabled?: boolean;
   maskOptions: IMaskOptions;
   allowInvalidDate?: boolean;
@@ -62,6 +64,8 @@ export class NovoFormControl extends FormControl {
   checkboxLabel?: string;
   restrictFieldInteractions?: boolean;
   warning?: string;
+  highlighted?: boolean;
+  disabledDateMessage?: string;
   private historyTimeout: any;
 
   constructor(value: any, control: NovoControlConfig) {
@@ -91,6 +95,7 @@ export class NovoFormControl extends FormControl {
     this.sortOrder = control.sortOrder;
     this.controlType = control.controlType;
     this.placeholder = control.placeholder;
+    this.minimal = control.minimal;
     this.multiple = control.multiple;
     this.headerConfig = control.headerConfig;
     this.optionsType = control.optionsType;
@@ -101,6 +106,7 @@ export class NovoFormControl extends FormControl {
     this.currencyFormat = control.currencyFormat;
     this.startDate = control.startDate;
     this.endDate = control.endDate;
+    this.weekStart = control.weekStart;
     this.textMaskEnabled = control.textMaskEnabled;
     this.textMaskEnabled = control.textMaskEnabled;
     this.maskOptions = control.maskOptions;
@@ -121,6 +127,7 @@ export class NovoFormControl extends FormControl {
     this.tipWell = control.tipWell;
     this.customControlConfig = control.customControlConfig;
     this.warning = control.warning;
+    this.disabledDateMessage = control.disabledDateMessage;
 
     // Reactive Form, need to enable/disable, can't bind to [disabled]
     if (this.readOnly) {
@@ -131,32 +138,24 @@ export class NovoFormControl extends FormControl {
   }
 
   /**
-   * @name hide
    * @param clearValue - flag to reset the control's value
    */
-  public hide(clearValue: boolean = true): void {
+  hide(clearValue: boolean = true): void {
     this.hidden = true;
     if (clearValue) {
       this.setValue(null);
     }
   }
 
-  /**
-   * @name show
-   */
-  public show(): void {
+  show(): void {
     this.hidden = false;
   }
 
-  /**
-   * @name setRequired
-   * @param isRequired
-   */
-  public setRequired(isRequired: boolean): void {
+  setRequired(isRequired: boolean): void {
     this.required = isRequired;
     // Update validators to have the required
     if (this.required && !this.hasRequiredValidator) {
-      let validators: any = [...this.validators];
+      const validators: any = [...this.validators];
       validators.push(Validators.required);
       // TODO: duplicated below
       this.setValidators(validators);
@@ -172,17 +171,7 @@ export class NovoFormControl extends FormControl {
     }
   }
 
-  /**
-   * @name setValue
-   *
-   * @param value
-   * @param onlySelf
-   * @param emitEvent
-   * @param emitModelToViewChange
-   * @param emitViewToModelChange
-   *
-   */
-  public setValue(
+  setValue(
     value: any,
     {
       onlySelf,
@@ -208,11 +197,7 @@ export class NovoFormControl extends FormControl {
     }, 300);
   }
 
-  /**
-   * @name setReadOnly
-   * @param isReadOnly
-   */
-  public setReadOnly(isReadOnly: boolean): void {
+  setReadOnly(isReadOnly: boolean): void {
     this.readOnly = isReadOnly;
     if (this.readOnly) {
       this.disable();
@@ -227,27 +212,27 @@ export class NovoFormControl extends FormControl {
    *
    * If the control has children, all children will be disabled to maintain the model.
    */
-  public disable(opts: { onlySelf?: boolean; emitEvent?: boolean } = { emitEvent: false }): void {
+  disable(opts: { onlySelf?: boolean; emitEvent?: boolean } = { emitEvent: false }): void {
     if (typeof opts.emitEvent === 'undefined') {
       opts.emitEvent = false;
     }
     super.disable(opts);
   }
 
-  public enable(opts: { onlySelf?: boolean; emitEvent?: boolean } = { emitEvent: false }): void {
+  enable(opts: { onlySelf?: boolean; emitEvent?: boolean } = { emitEvent: false }): void {
     if (typeof opts.emitEvent === 'undefined') {
       opts.emitEvent = false;
     }
     super.enable(opts);
   }
 
-  /**
-   * @name markAsInvalid
-   * @param message
-   */
   markAsInvalid(message: string): void {
     this.markAsDirty();
     this.markAsTouched();
     this.setErrors(Object.assign({}, this.errors, { custom: message }));
+  }
+
+  markAsValid(): void {
+    this.setErrors(null);
   }
 }

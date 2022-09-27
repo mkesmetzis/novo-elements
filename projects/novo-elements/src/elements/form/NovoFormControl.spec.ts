@@ -4,7 +4,7 @@ import { Validators } from '@angular/forms';
 import { NovoFormControl } from './NovoFormControl';
 
 describe('Elements: NovoFormControl', () => {
-  let component = new NovoFormControl('1', { validators: [] });
+  const component = new NovoFormControl('1', { validators: [] });
   it('initialize correctly', () => {
     expect(component).toBeDefined();
   });
@@ -39,7 +39,7 @@ describe('Elements: NovoFormControl', () => {
       jest.spyOn(component, 'setValidators');
       jest.spyOn(component, 'updateValueAndValidity');
     });
-    it('should add new a validator and update the value and validity if it wasn\'t required before.', () => {
+    it("should add new a validator and update the value and validity if it wasn't required before.", () => {
       expect(component.setRequired).toBeDefined();
       component.hasRequiredValidator = false;
       component.setRequired(true);
@@ -49,7 +49,7 @@ describe('Elements: NovoFormControl', () => {
       expect(component.setValidators).toHaveBeenCalledWith([Validators.required]);
       expect(component.updateValueAndValidity).toHaveBeenCalled();
     });
-    it('should add new a validator and update the value and validity if it wasn\'t required before.', () => {
+    it("should add new a validator and update the value and validity if it wasn't required before.", () => {
       expect(component.setRequired).toBeDefined();
       component.hasRequiredValidator = true;
       component.setRequired(false);
@@ -91,7 +91,7 @@ describe('Elements: NovoFormControl', () => {
     });
   });
 
-  describe('Method: markAsInvalid(message)', () => {
+  describe('Method: markAsInvalid(message) / markAsValid()', () => {
     beforeEach(() => {
       jest.spyOn(component, 'markAsDirty');
       jest.spyOn(component, 'markAsTouched');
@@ -103,6 +103,15 @@ describe('Elements: NovoFormControl', () => {
       expect(component.markAsDirty).toHaveBeenCalled();
       expect(component.markAsTouched).toHaveBeenCalled();
       expect(component.setErrors).toHaveBeenCalledWith({ custom: 'Derp' });
+    });
+    it('should reset the errors when marked as valid.', () => {
+      expect(component.markAsInvalid).toBeDefined();
+      component.markAsInvalid('Derp');
+      expect(component.markAsDirty).toHaveBeenCalled();
+      expect(component.markAsTouched).toHaveBeenCalled();
+      expect(component.setErrors).toHaveBeenCalledWith({ custom: 'Derp' });
+      component.markAsValid();
+      expect(component.setErrors).toHaveBeenCalledWith(null);
     });
   });
 });

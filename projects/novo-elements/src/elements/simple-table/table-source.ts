@@ -1,10 +1,9 @@
-import { ChangeDetectorRef } from '@angular/core';
 import { DataSource } from '@angular/cdk/table';
-import { Observable, of, merge } from 'rxjs';
-import { startWith, switchMap, map, catchError } from 'rxjs/operators';
-
-import { NovoActivityTableState } from './state';
+import { ChangeDetectorRef } from '@angular/core';
+import { merge, Observable, of } from 'rxjs';
+import { catchError, map, startWith, switchMap } from 'rxjs/operators';
 import { Helpers } from '../../utils/Helpers';
+import { NovoActivityTableState } from './state';
 
 export interface ActivityTableService<T> {
   getTableResults(
@@ -45,7 +44,7 @@ export class StaticActivityTableService<T> implements ActivityTableService<T> {
         ret = ret.filter((item) => Object.keys(item).some((key) => `${item[key]}`.toLowerCase().includes(globalSearch.toLowerCase())));
       }
       if (filter) {
-        let value = Helpers.isString(filter.value) ? filter.value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') : filter.value;
+        const value = Helpers.isString(filter.value) ? filter.value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') : filter.value;
         ret = ret.filter(Helpers.filterByField(filter.id, value));
       }
       if (sort) {

@@ -1,19 +1,6 @@
 // NG2
-import {
-  Component,
-  PLATFORM_ID,
-  Inject,
-  Input,
-  Output,
-  Optional,
-  EventEmitter,
-  OnInit,
-  OnChanges,
-  SimpleChanges,
-  ElementRef,
-} from '@angular/core';
-import { NovoSearchBoxElement } from '../search/SearchBox';
-import { isPlatformBrowser, isPlatformServer } from '@angular/common';
+import { isPlatformBrowser } from '@angular/common';
+import { Component, ElementRef, EventEmitter, Inject, Input, OnChanges, OnInit, Output, PLATFORM_ID } from '@angular/core';
 import { GlobalRef } from '../../services/global/global.service';
 import { GooglePlacesService } from './places.service';
 
@@ -45,16 +32,16 @@ export interface Settings {
 @Component({
   selector: 'google-places-list',
   template: `
-        <novo-list direction="vertical">
-            <novo-list-item *ngFor="let data of queryItems;let $index = index" (click)="selectedListNode($event, $index)">
-                <item-header>
-                    <item-avatar icon="location"></item-avatar>
-                    <item-title>{{data.structured_formatting?.main_text ? data.structured_formatting.main_text : data.description}}</item-title>
-                </item-header>
-                <item-content>{{data.structured_formatting?.secondary_text}}</item-content>
-            </novo-list-item>
-        </novo-list>
-    `,
+    <novo-list direction="vertical">
+      <novo-list-item *ngFor="let data of queryItems; let $index = index" (click)="selectedListNode($event, $index)">
+        <item-header>
+          <item-avatar icon="location"></item-avatar>
+          <item-title>{{ data.structured_formatting?.main_text ? data.structured_formatting.main_text : data.description }}</item-title>
+        </item-header>
+        <item-content>{{ data.structured_formatting?.secondary_text }}</item-content>
+      </novo-list-item>
+    </novo-list>
+  `,
 })
 export class PlacesListComponent implements OnInit, OnChanges {
   @Input()
@@ -130,7 +117,7 @@ export class PlacesListComponent implements OnInit, OnChanges {
 
   // function called when there is a change in input. (Binded with view)
   searchinputCallback(event: any): any {
-    let inputVal: any = this.locationInput;
+    const inputVal: any = this.locationInput;
     if (inputVal) {
       this.getListQuery(inputVal);
     } else {
@@ -179,7 +166,7 @@ export class PlacesListComponent implements OnInit, OnChanges {
 
   // function to manually trigger the callback to parent component when clicked search button.
   userQuerySubmit(selectedOption?: any): any {
-    let _userOption: any = selectedOption === 'false' ? '' : this.userSelectedOption;
+    const _userOption: any = selectedOption === 'false' ? '' : this.userSelectedOption;
     if (_userOption) {
       this.select.emit(this.userSelectedOption);
     } else {
@@ -254,10 +241,10 @@ export class PlacesListComponent implements OnInit, OnChanges {
 
   // function to set user settings if it is available.
   private setUserSettings(): Settings {
-    let _tempObj: any = {};
+    const _tempObj: any = {};
     if (this.userSettings && typeof this.userSettings === 'object') {
-      let keys: string[] = Object.keys(this.defaultSettings);
-      for (let value of keys) {
+      const keys: string[] = Object.keys(this.defaultSettings);
+      for (const value of keys) {
         _tempObj[value] = this.userSettings[value] !== undefined ? this.userSettings[value] : this.defaultSettings[value];
       }
       return _tempObj;
@@ -270,7 +257,7 @@ export class PlacesListComponent implements OnInit, OnChanges {
   private getListQuery(value: string): any {
     this.recentDropdownOpen = false;
     if (this.settings.useGoogleGeoApi) {
-      let _tempParams: any = {
+      const _tempParams: any = {
         query: value,
         countryRestriction: this.settings.geoCountryRestriction,
         geoTypes: this.settings.geoTypes,
@@ -294,7 +281,7 @@ export class PlacesListComponent implements OnInit, OnChanges {
   private extractServerList(arrayList: any, data: any): any {
     if (arrayList.length) {
       let _tempData: any = data;
-      for (let key of arrayList) {
+      for (const key of arrayList) {
         _tempData = _tempData[key];
       }
       return _tempData;
@@ -321,27 +308,6 @@ export class PlacesListComponent implements OnInit, OnChanges {
       }
     });
   }
-
-  // //function to navigate through list when up and down keyboard key is pressed;
-  // private navigateInList(keyCode: number): any {
-  //     let arrayIndex: number = 0;
-  //     //arrow down
-  //     if (keyCode === 40) {
-  //         if (this.selectedDataIndex >= 0) {
-  //             arrayIndex = ((this.selectedDataIndex + 1) <= (this.queryItems.length - 1)) ? (this.selectedDataIndex + 1) : 0;
-  //         }
-  //         this.activeListNode(arrayIndex);
-  //     } else if (keyCode === 38) {//arrow up
-  //         if (this.selectedDataIndex >= 0) {
-  //             arrayIndex = ((this.selectedDataIndex - 1) >= 0) ? (this.selectedDataIndex - 1) : (this.queryItems.length - 1);
-  //         } else {
-  //             arrayIndex = this.queryItems.length - 1;
-  //         }
-  //         this.activeListNode(arrayIndex);
-  //     } else {
-  //         this.processSearchQuery();
-  //     }
-  // }
 
   // function to execute to get location detail based on latitude and longitude.
   private getCurrentLocationInfo(latlng: any): any {

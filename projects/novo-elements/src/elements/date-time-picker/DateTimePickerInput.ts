@@ -1,11 +1,8 @@
 // NG
-import { ChangeDetectorRef, Component, ElementRef, forwardRef, Host, Input, Output, Inject, ViewChild, EventEmitter } from '@angular/core';
+import { ChangeDetectorRef, Component, ElementRef, EventEmitter, forwardRef, Input, Output } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
-import { TAB, ENTER, ESCAPE } from '@angular/cdk/keycodes';
 // Vendor
-import { parse, isDate } from 'date-fns';
-// App
-import { NovoDateTimePickerElement } from './DateTimePicker';
+import { isDate, parse } from 'date-fns';
 import { NovoLabelService } from '../../services/novo-label-service';
 import { Helpers } from '../../utils/Helpers';
 
@@ -20,8 +17,26 @@ const DATE_VALUE_ACCESSOR = {
   selector: 'novo-date-time-picker-input',
   providers: [DATE_VALUE_ACCESSOR],
   template: `
-        <novo-date-picker-input [ngModel]="datePart" (ngModelChange)="updateDate($event)" [start]="start" [end]="end" [maskOptions]="maskOptions" (blurEvent)="handleBlur($event)" (focusEvent)="handleFocus($event)" [disabled]="disabled"></novo-date-picker-input>
-        <novo-time-picker-input [ngModel]="timePart" (ngModelChange)="updateTime($event)" [military]="military" (blurEvent)="handleBlur($event)" (focusEvent)="handleFocus($event)" [disabled]="disabled"></novo-time-picker-input>
+    <novo-date-picker-input
+      [ngModel]="datePart"
+      (ngModelChange)="updateDate($event)"
+      [start]="start"
+      [end]="end"
+      [disabledDateMessage]="disabledDateMessage"
+      [maskOptions]="maskOptions"
+      (blurEvent)="handleBlur($event)"
+      (focusEvent)="handleFocus($event)"
+      [disabled]="disabled"
+      [weekStart]="weekStart"
+    ></novo-date-picker-input>
+    <novo-time-picker-input
+      [ngModel]="timePart"
+      (ngModelChange)="updateTime($event)"
+      [military]="military"
+      (blurEvent)="handleBlur($event)"
+      (focusEvent)="handleFocus($event)"
+      [disabled]="disabled"
+    ></novo-time-picker-input>
   `,
 })
 export class NovoDateTimePickerInputElement implements ControlValueAccessor {
@@ -51,10 +66,16 @@ export class NovoDateTimePickerInputElement implements ControlValueAccessor {
   disabled: boolean = false;
   @Input()
   format: string;
+  @Input()
+  weekStart: number = 0;
+  @Input()
+  disabledDateMessage: string;
   @Output()
   blurEvent: EventEmitter<FocusEvent> = new EventEmitter<FocusEvent>();
   @Output()
   focusEvent: EventEmitter<FocusEvent> = new EventEmitter<FocusEvent>();
+  @Output()
+  changeEvent: EventEmitter<FocusEvent> = new EventEmitter<FocusEvent>();
 
   constructor(public element: ElementRef, public labels: NovoLabelService, private _changeDetectorRef: ChangeDetectorRef) {}
 
@@ -74,6 +95,7 @@ export class NovoDateTimePickerInputElement implements ControlValueAccessor {
 
   handleBlur(event) {
     this.blurEvent.emit(event);
+    this.changeEvent.emit(event);
   }
 
   handleFocus(event) {
@@ -83,14 +105,26 @@ export class NovoDateTimePickerInputElement implements ControlValueAccessor {
   checkParts() {
     try {
       if (this.datePart instanceof Date && this.timePart instanceof Date) {
-        let newDt = new Date(
-          this.datePart.getFullYear(),
-          this.datePart.getMonth(),
-          this.datePart.getDate(),
-          this.timePart.getHours(),
-          this.timePart.getMinutes(),
+        this.dispatchOnChange(
+          new Date(
+            this.datePart.getFullYear(),
+            this.datePart.getMonth(),
+            this.datePart.getDate(),
+            this.timePart.getHours(),
+            this.timePart.getMinutes(),
+          ),
         );
-        this.dispatchOnChange(newDt);
+      } else if (this.datePart instanceof Date) {
+        this.timePart = new Date(this.datePart.getFullYear(), this.datePart.getMonth(), this.datePart.getDate(), 12, 0);
+        this.dispatchOnChange(
+          new Date(
+            this.datePart.getFullYear(),
+            this.datePart.getMonth(),
+            this.datePart.getDate(),
+            this.timePart.getHours(),
+            this.timePart.getMinutes(),
+          ),
+        );
       } else {
         this.dispatchOnChange(null);
       }

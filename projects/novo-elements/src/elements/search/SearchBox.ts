@@ -1,22 +1,23 @@
 // NG2
+import { ENTER, ESCAPE, TAB } from '@angular/cdk/keycodes';
 import {
-  Component,
-  Input,
-  Output,
-  EventEmitter,
-  ViewChild,
-  forwardRef,
-  ElementRef,
-  HostBinding,
-  ChangeDetectorRef,
-  NgZone,
   ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  EventEmitter,
+  forwardRef,
+  HostBinding,
+  Input,
+  NgZone,
+  Output,
+  ViewChild,
 } from '@angular/core';
-import { NG_VALUE_ACCESSOR, ControlValueAccessor } from '@angular/forms';
-import { TAB, ENTER, ESCAPE } from '@angular/cdk/keycodes';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 // APP
-import { NovoOverlayTemplateComponent } from '../overlay/Overlay';
 import { NovoLabelService } from '../../services/novo-label-service';
+import { Key } from '../../utils';
+import { NovoOverlayTemplateComponent } from '../common/overlay/Overlay';
 
 // Value accessor for the component (supports ngModel)
 const SEARCH_VALUE_ACCESSOR = {
@@ -30,15 +31,33 @@ const SEARCH_VALUE_ACCESSOR = {
   providers: [SEARCH_VALUE_ACCESSOR],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-        <!-- SEARCH ICON -->
-        <button theme="fab" [color]="theme" [icon]="icon" (click)="showSearch()" [tooltip]="hint" tooltipPosition="bottom" data-automation-id="novo-search-fab"></button>
-        <!-- SEARCH INPUT -->
-        <input type="text" [attr.name]="name" [attr.value]="displayValue" [attr.placeholder]="placeholder" (focus)="onFocus()" (blur)="onBlur()" (keydown)="_handleKeydown($event)" (input)="_handleInput($event)" #input data-automation-id="novo-search-input"/>
-        <!-- SEARCH OVERLAY -->
-        <novo-overlay-template [parent]="element" [closeOnSelect]="closeOnSelect" position="above-below" (select)="closePanel()" (closing)="onBlur()">
-            <ng-content></ng-content>
-        </novo-overlay-template>
-    `,
+    <!-- SEARCH ICON -->
+    <novo-icon (click)="showSearch($event)" [tooltip]="hint" tooltipPosition="bottom">{{ icon }}</novo-icon>
+    <!-- SEARCH INPUT -->
+    <input
+      type="text"
+      [attr.name]="name"
+      [attr.value]="displayValue"
+      [attr.placeholder]="placeholder"
+      (focus)="onFocus()"
+      (blur)="onBlur()"
+      (keydown)="_handleKeydown($event)"
+      (input)="_handleInput($event)"
+      #input
+      data-automation-id="novo-search-input"
+    />
+    <!-- SEARCH OVERLAY -->
+    <novo-overlay-template
+      [parent]="element"
+      [closeOnSelect]="closeOnSelect"
+      [position]="position"
+      [hasBackdrop]="hasBackdrop"
+      (select)="onSelect()"
+      (closing)="onBlur()"
+    >
+      <ng-content></ng-content>
+    </novo-overlay-template>
+  `,
 })
 export class NovoSearchBoxElement implements ControlValueAccessor {
   @Input()
@@ -46,11 +65,16 @@ export class NovoSearchBoxElement implements ControlValueAccessor {
   @Input()
   public icon: string = 'search';
   @Input()
+  public position: string = 'bottom-left';
+  @Input()
   public placeholder: string = 'Search...';
   @Input()
+  @HostBinding('class.always-open')
   public alwaysOpen: boolean = false;
   @Input()
-  public theme: string = 'positive';
+  public theme: string;
+  @Input()
+  public color: string = 'positive';
   @Input()
   public closeOnSelect: boolean = true;
   @Input()
@@ -59,8 +83,16 @@ export class NovoSearchBoxElement implements ControlValueAccessor {
   public displayValue: string;
   @Input()
   public hint: string;
+  @Input()
+  public keepOpen: boolean = false;
+  @Input()
+  public hasBackdrop: boolean = false;
+  @Input()
+  public allowPropagation: boolean = false;
   @Output()
   public searchChanged: EventEmitter<string> = new EventEmitter<string>();
+  @Output()
+  public applySearch: EventEmitter<KeyboardEvent> = new EventEmitter<KeyboardEvent>();
   @HostBinding('class.focused')
   focused: boolean = false;
   public value: any;
@@ -73,7 +105,7 @@ export class NovoSearchBoxElement implements ControlValueAccessor {
   /** Element for the panel containing the autocomplete options. */
   @ViewChild(NovoOverlayTemplateComponent)
   overlay: any;
-  @ViewChild('input')
+  @ViewChild('input', { static: true })
   input: any;
 
   private debounceSearchChange: any;
@@ -94,11 +126,13 @@ export class NovoSearchBoxElement implements ControlValueAccessor {
       // Reset search
       // Set focus on search
       setTimeout(() => {
-        let element = this.input.nativeElement;
+        const element = this.input.nativeElement;
         if (element) {
           element.focus();
         }
       }, 10);
+    } else {
+      this.closePanel();
     }
   }
   onFocus() {
@@ -108,14 +142,22 @@ export class NovoSearchBoxElement implements ControlValueAccessor {
     });
   }
   onBlur() {
-    this.focused = false;
+    if (!this.keepOpen || !this.panelOpen) {
+      this.focused = false;
+    }
+  }
+  onSelect() {
+    if (!this.keepOpen) {
+      this.closePanel();
+    }
   }
   /** BEGIN: Convenient Panel Methods. */
   openPanel(): void {
     this.overlay.openPanel();
   }
   closePanel(): void {
-    this.overlay.closePanel();
+    setTimeout(() => this.overlay.closePanel());
+    this.focused = false;
   }
   get panelOpen(): boolean {
     return this.overlay && this.overlay.panelOpen;
@@ -127,13 +169,19 @@ export class NovoSearchBoxElement implements ControlValueAccessor {
   /** END: Convenient Panel Methods. */
 
   _handleKeydown(event: KeyboardEvent): void {
-    if ((event.keyCode === ESCAPE || event.keyCode === ENTER || event.keyCode === TAB) && this.panelOpen) {
+    if ((event.key === Key.Escape || event.key === Key.Enter || event.key === Key.Tab) && this.panelOpen) {
+      if (event.keyCode === ENTER) {
+        this.applySearch.emit(event);
+      }
       this.closePanel();
-      event.stopPropagation();
+      if (!this.allowPropagation) {
+        event.stopPropagation();
+      }
     }
   }
   _handleInput(event: KeyboardEvent): void {
     if (document.activeElement === event.target) {
+      this.value = (event.target as HTMLInputElement).value;
       this._onChange((event.target as HTMLInputElement).value);
 
       if (this.debounceSearchChange) {

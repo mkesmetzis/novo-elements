@@ -1,13 +1,12 @@
 // NG2
-import { Component, Input, OnInit, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
+import { ChangeDetectorRef, Component, Input, OnInit } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
-import { HighlightJS } from './highlight.service';
 import { EXAMPLE_COMPONENTS } from '../examples.module';
+import { HighlightJS } from './highlight.service';
 
 @Component({
   selector: 'code-snippet',
   template: `
-
     <novo-nav theme="white" [outlet]="snippets">
       <novo-tab><span>HTML</span></novo-tab>
       <novo-tab><span>TS</span></novo-tab>
@@ -15,16 +14,16 @@ import { EXAMPLE_COMPONENTS } from '../examples.module';
     </novo-nav>
     <novo-nav-outlet #snippets>
       <novo-nav-content>
-          <pre><code [innerHtml]="highlightHTML"></code></pre>
+        <pre><code [innerHtml]="highlightHTML"></code></pre>
       </novo-nav-content>
       <novo-nav-content>
-          <pre><code [innerHtml]="highlightTS"></code></pre>
+        <pre><code [innerHtml]="highlightTS"></code></pre>
       </novo-nav-content>
       <novo-nav-content>
-          <pre><code [innerHtml]="highlightCSS"></code></pre>
+        <pre><code [innerHtml]="highlightCSS"></code></pre>
       </novo-nav-content>
     </novo-nav-outlet>
-    `,
+  `,
   // changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CodeSnippetComponent implements OnInit {
@@ -38,9 +37,9 @@ export class CodeSnippetComponent implements OnInit {
 
   ngOnInit() {
     this.hljs.isReady.subscribe(() => {
-      let code = decodeURIComponent(EXAMPLE_COMPONENTS[this.example].tsSource);
-      let markup = decodeURIComponent(EXAMPLE_COMPONENTS[this.example].htmlSource);
-      let style = decodeURIComponent(EXAMPLE_COMPONENTS[this.example].cssSource);
+      const code = decodeURIComponent(EXAMPLE_COMPONENTS[this.example].tsSource);
+      const markup = decodeURIComponent(EXAMPLE_COMPONENTS[this.example].htmlSource);
+      const style = decodeURIComponent(EXAMPLE_COMPONENTS[this.example].cssSource);
       this.highlightTS = this.sanitizer.bypassSecurityTrustHtml(this.hljs.highlightAuto(code, ['typescript']).value.trim());
       this.highlightHTML = this.sanitizer.bypassSecurityTrustHtml(this.hljs.highlightAuto(markup, ['html']).value.trim());
       this.highlightCSS = this.sanitizer.bypassSecurityTrustHtml(this.hljs.highlightAuto(style, ['css']).value.trim());

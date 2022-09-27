@@ -1,9 +1,8 @@
-import { Directive, HostListener, Input, TemplateRef, ViewContainerRef, OnDestroy } from '@angular/core';
+import { Directive, HostListener, Inject, Input, OnDestroy, TemplateRef, ViewContainerRef } from '@angular/core';
 import { Subscription } from 'rxjs';
-
-import { DataTableState } from './state/data-table-state.service';
 import { Helpers } from '../../utils/Helpers';
-import { NovoDataTable } from './data-table.component';
+import { NovoDataTableRef, NOVO_DATA_TABLE_REF } from './data-table.token';
+import { DataTableState } from './state/data-table-state.service';
 
 @Directive({
   selector: '[novoDataTableExpand]',
@@ -16,7 +15,11 @@ export class NovoDataTableExpandDirective<T> implements OnDestroy {
 
   private subscription: Subscription;
 
-  constructor(public vcRef: ViewContainerRef, private state: DataTableState<T>, private dataTable: NovoDataTable<T>) {
+  constructor(
+    public vcRef: ViewContainerRef,
+    private state: DataTableState<T>,
+    @Inject(NOVO_DATA_TABLE_REF) private dataTable: NovoDataTableRef,
+  ) {
     this.subscription = this.state.expandSource.subscribe((targetId?: number) => {
       if (this.shouldExpandAllRows(targetId) || this.shouldExpandOneRow(targetId)) {
         if (dataTable.isExpanded(this.row)) {
@@ -30,7 +33,7 @@ export class NovoDataTableExpandDirective<T> implements OnDestroy {
 
   shouldExpandAllRows = (targetId: number): boolean => targetId === undefined;
 
-  shouldExpandOneRow = (targetId: number) => targetId === ((this.row as unknown) as { id: number }).id;
+  shouldExpandOneRow = (targetId: number) => targetId === (this.row as unknown as { id: number }).id;
 
   ngOnDestroy() {
     this.subscription.unsubscribe();

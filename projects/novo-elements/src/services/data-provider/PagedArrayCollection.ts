@@ -1,8 +1,6 @@
-import { EventEmitter } from '@angular/core';
-
 import { ArrayCollection } from './ArrayCollection';
-import { PagedCollection } from './PagedCollection';
 import { CollectionEvent } from './CollectionEvent';
+import { PagedCollection } from './PagedCollection';
 
 export class PagedArrayCollection<T> extends ArrayCollection<T> implements PagedCollection<T> {
   _page: number = 1;
@@ -71,18 +69,18 @@ export class PagedArrayCollection<T> extends ArrayCollection<T> implements Paged
 
   refresh(): void {
     this.filterData = this.isEditing ? this.editData.slice() : this.source.slice();
-    for (let item of this._sort.reverse()) {
+    for (const item of this._sort.reverse()) {
       this.sortOn(item.field, item.reverse);
     }
-    for (let key in this._filter) {
+    for (const key in this._filter) {
       if (key) {
         this.filterOn(key, this._filter[key]);
       }
     }
     if (this.page >= 0) {
-      let start = (this.page - 1) * this.pageSize;
-      let end = start + this.pageSize;
-      let result = this.filterData.slice(start, end);
+      const start = (this.page - 1) * this.pageSize;
+      const end = start + this.pageSize;
+      const result = this.filterData.slice(start, end);
       this.onDataChange(new CollectionEvent(CollectionEvent.CHANGE, result));
     } else {
       this.onDataChange(new CollectionEvent(CollectionEvent.CHANGE, this.filterData));

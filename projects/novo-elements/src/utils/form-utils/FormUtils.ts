@@ -16,17 +16,19 @@ import {
   PickerControl,
   RadioControl,
   SelectControl,
+  SwitchControl,
   TextAreaControl,
   TextBoxControl,
   TilesControl,
   TimeControl,
+  TimezoneControl,
 } from '../../elements/form/FormControls';
-import { EntityPickerResult, EntityPickerResults } from '../../elements/picker/extras/entity-picker-results/EntityPickerResults';
-import { Helpers } from '../Helpers';
-import { NovoFieldset, FormField } from '../../elements/form/FormInterfaces';
+import type { FormField, NovoFieldset } from '../../elements/form/FormInterfaces';
 import { NovoFormControl } from '../../elements/form/NovoFormControl';
 import { NovoFormGroup } from '../../elements/form/NovoFormGroup';
+import { EntityPickerResult, EntityPickerResults } from '../../elements/picker/extras/entity-picker-results/EntityPickerResults';
 import { NovoLabelService } from '../../services/novo-label-service';
+import { Helpers } from '../Helpers';
 import { OptionsService } from './../../services/options/OptionsService';
 
 @Injectable()
@@ -42,6 +44,7 @@ export class FormUtils {
     'CorporateUser',
     'Person',
     'Placement',
+    'JobShift',
   ];
   ENTITY_PICKER_LIST: string[] = [
     'Candidate',
@@ -63,14 +66,15 @@ export class FormUtils {
     'Person',
     'PersonText',
     'Placement',
+    'JobShift',
   ];
 
   constructor(public labels: NovoLabelService, public optionsService: OptionsService) {}
 
   toFormGroup(controls: Array<any>): NovoFormGroup {
-    let group: any = {};
+    const group: any = {};
     controls.forEach((control) => {
-      let value = Helpers.isBlank(control.value) ? '' : control.value;
+      const value = Helpers.isBlank(control.value) ? '' : control.value;
       group[control.key] = new NovoFormControl(value, control);
     });
     return new NovoFormGroup(group);
@@ -82,8 +86,8 @@ export class FormUtils {
 
   addControls(formGroup: NovoFormGroup, controls: Array<NovoControlConfig>): void {
     controls.forEach((control) => {
-      let value = Helpers.isBlank(control.value) ? '' : control.value;
-      let formControl = new NovoFormControl(value, control);
+      const value = Helpers.isBlank(control.value) ? '' : control.value;
+      const formControl = new NovoFormControl(value, control);
       formGroup.addControl(control.key, formControl);
     });
   }
@@ -94,33 +98,21 @@ export class FormUtils {
     });
   }
 
-  /**
-   * @name toFormGroupFromFieldset
-   * @param fieldsets
-   */
   toFormGroupFromFieldset(fieldsets: Array<NovoFieldset>): NovoFormGroup {
-    let controls: Array<NovoFormControl> = [];
+    const controls: Array<NovoFormControl> = [];
     fieldsets.forEach((fieldset) => {
       controls.push(...fieldset.controls);
     });
     return this.toFormGroup(controls);
   }
 
-  /**
-   * @name hasAssociatedEntity
-   * @param field
-   */
   hasAssociatedEntity(field: FormField): boolean {
     return !!(field.associatedEntity && ~this.ASSOCIATED_ENTITY_LIST.indexOf(field.associatedEntity.entity));
   }
 
-  /**
-   * @name determineInputType
-   * @param field
-   */
   determineInputType(field: FormField): string {
     let type: string;
-    let dataSpecializationTypeMap = {
+    const dataSpecializationTypeMap = {
       DATETIME: 'datetime',
       TIME: 'time',
       MONEY: 'currency',
@@ -130,30 +122,33 @@ export class FormUtils {
       YEAR: 'year',
       WORKFLOW_OPTIONS: 'select',
       SPECIALIZED_OPTIONS: 'select',
+      ALL_WORKFLOW_OPTIONS: 'select',
       WorkflowOptionsLookup: 'select',
       SpecializedOptionsLookup: 'select',
+      SimplifiedOptionsLookup: 'select',
+      AllWorkflowOptionsLookup: 'select',
     };
-    let dataTypeToTypeMap = {
+    const dataTypeToTypeMap = {
       Timestamp: 'date',
       Date: 'date',
       Boolean: 'tiles',
     };
-    let inputTypeToTypeMap = {
+    const inputTypeToTypeMap = {
       CHECKBOX: 'radio',
       RADIO: 'radio',
       SELECT: 'select',
       TILES: 'tiles',
     };
-    let inputTypeMultiToTypeMap = {
+    const inputTypeMultiToTypeMap = {
       CHECKBOX: 'checklist',
       RADIO: 'checklist',
       SELECT: 'chips',
     };
-    let typeToTypeMap = {
+    const typeToTypeMap = {
       file: 'file',
       COMPOSITE: 'address',
     };
-    let numberDataTypeToTypeMap = {
+    const numberDataTypeToTypeMap = {
       Double: 'float',
       BigDecimal: 'float',
       Integer: 'number',
@@ -173,10 +168,21 @@ export class FormUtils {
         }
       }
     } else if (field.type === 'TO_ONE') {
-      if ('SYSTEM' === field.dataSpecialization && ['WorkflowOptionsLookup', 'SpecializedOptionsLookup'].includes(field.dataType)) {
+      if (
+        'SYSTEM' === field.dataSpecialization &&
+        ['WorkflowOptionsLookup', 'SpecializedOptionsLookup', 'AllWorkflowOptionsLookup'].includes(field.dataType)
+      ) {
         type = dataSpecializationTypeMap[field.dataType];
-      } else if (['WORKFLOW_OPTIONS', 'SPECIALIZED_OPTIONS'].includes(field.dataSpecialization)) {
+      } else if (['WORKFLOW_OPTIONS', 'SPECIALIZED_OPTIONS', 'ALL_WORKFLOW_OPTIONS'].includes(field.dataSpecialization)) {
         type = dataSpecializationTypeMap[field.dataSpecialization];
+      } else if (['SimplifiedOptionsLookup', 'SpecializedOptionsLookup'].includes(field.dataType)) {
+        if (field.options && Object.keys(inputTypeToTypeMap).indexOf(field.inputType) > -1 && !field.multiValue) {
+          type = inputTypeToTypeMap[field.inputType];
+        } else if (field.options && Object.keys(inputTypeMultiToTypeMap).indexOf(field.inputType) > -1 && field.multiValue) {
+          type = inputTypeMultiToTypeMap[field.inputType];
+        } else {
+          type = dataSpecializationTypeMap[field.dataType];
+        }
       } else if (this.hasAssociatedEntity(field)) {
         type = 'entitypicker'; // TODO!
       } else {
@@ -215,7 +221,7 @@ export class FormUtils {
   getControlForField(
     field: any,
     http,
-    config: { token?: string; restUrl?: string; military?: boolean },
+    config: { token?: string; restUrl?: string; military?: boolean; weekStart?: number },
     overrides?: any,
     forTable: boolean = false,
     fieldData?: any,
@@ -224,9 +230,9 @@ export class FormUtils {
     // TODO: (cont.) as the setter of the field argument
     let type: string = this.determineInputType(field) || field.type;
     let control: any;
-    let controlConfig: NovoControlConfig = {
+    const controlConfig: NovoControlConfig = {
       metaType: field.type,
-      type: type,
+      type,
       key: field.name,
       label: field.label,
       placeholder: field.hint || '',
@@ -257,7 +263,7 @@ export class FormUtils {
       closeOnSelect: field.closeOnSelect,
       layoutOptions: field.layoutOptions,
     };
-    this.inferStartDate(controlConfig, field);
+    this.inferDateRange(controlConfig, field);
     // TODO: getControlOptions should always return the correct format
     const optionsConfig = this.getControlOptions(field, http, config, fieldData);
     if (Array.isArray(optionsConfig) && !(type === 'chips' || type === 'picker')) {
@@ -333,6 +339,7 @@ export class FormUtils {
         break;
       case 'datetime':
         controlConfig.military = config ? !!config.military : false;
+        controlConfig.weekStart = config && config.weekStart ? config.weekStart : 0;
         control = new DateTimeControl(controlConfig);
         break;
       case 'date':
@@ -340,11 +347,26 @@ export class FormUtils {
         controlConfig.textMaskEnabled = field.textMaskEnabled;
         controlConfig.allowInvalidDate = field.allowInvalidDate;
         controlConfig.military = config ? !!config.military : false;
+        controlConfig.weekStart = config && config.weekStart ? config.weekStart : 0;
         control = new DateControl(controlConfig);
         break;
       case 'time':
         controlConfig.military = config ? !!config.military : false;
         control = new TimeControl(controlConfig);
+        break;
+      case 'native-time':
+      case 'native-date':
+      case 'native-week':
+      case 'native-year':
+      case 'native-datetime-local':
+      case 'native-tel':
+      case 'native-email':
+      case 'native-url':
+      case 'native-number':
+        control = new CustomControl({ ...controlConfig, template: 'native-input', type: type.replace('native-', ''), alwaysActive: true });
+        break;
+      case 'timezone':
+        control = new TimezoneControl(controlConfig);
         break;
       case 'currency':
       case 'money':
@@ -380,6 +402,9 @@ export class FormUtils {
         controlConfig.checkboxLabel = field.checkboxLabel;
         control = new CheckboxControl(controlConfig);
         break;
+      case 'switch':
+        control = new SwitchControl(controlConfig);
+        break;
       case 'checklist':
         control = new CheckListControl(controlConfig);
         break;
@@ -397,7 +422,7 @@ export class FormUtils {
         controlConfig.config.required = field.required;
         controlConfig.config.readOnly = controlConfig.readOnly;
         if (field.fields && field.fields.length) {
-          for (let subfield of field.fields) {
+          for (const subfield of field.fields) {
             controlConfig.config[subfield.name] = {
               required: !!subfield.required,
               hidden: !!subfield.readOnly,
@@ -454,7 +479,8 @@ export class FormUtils {
 
     return (
       field.name !== 'id' &&
-      (field.dataSpecialization !== 'SYSTEM' || ['address', 'billingAddress', 'secondaryAddress'].indexOf(field.name) !== -1) &&
+      (!['SYSTEM', 'SECTION_HEADER'].includes(field.dataSpecialization) ||
+        ['address', 'billingAddress', 'secondaryAddress'].includes(field.name)) &&
       !field.readOnly
     );
   }
@@ -463,16 +489,16 @@ export class FormUtils {
     meta,
     currencyFormat,
     http,
-    config: { token?: string; restUrl?: string; military?: boolean },
+    config: { token?: string; restUrl?: string; military?: boolean; weekStart?: number },
     overrides?: any,
     forTable: boolean = false,
   ) {
-    let controls = [];
+    const controls = [];
     if (meta && meta.fields) {
-      let fields = meta.fields;
+      const fields = meta.fields;
       fields.forEach((field) => {
         if (this.shouldCreateControl(field)) {
-          let control = this.getControlForField(field, http, config, overrides, forTable);
+          const control = this.getControlForField(field, http, config, overrides, forTable);
           // Set currency format
           if (control.subType === 'currency') {
             control.currencyFormat = currencyFormat;
@@ -486,8 +512,8 @@ export class FormUtils {
   }
 
   toTableControls(meta, currencyFormat, http, config: { token?: string; restUrl?: string; military?: boolean }, overrides?: any) {
-    let controls = this.toControls(meta, currencyFormat, http, config, overrides, true);
-    let ret = {};
+    const controls = this.toControls(meta, currencyFormat, http, config, overrides, true);
+    const ret = {};
     controls.forEach((control: BaseControl) => {
       ret[control.key] = {
         editorType: control.__type,
@@ -501,11 +527,11 @@ export class FormUtils {
     meta,
     currencyFormat,
     http,
-    config: { token?: string; restUrl?: string; military?: boolean },
+    config: { token?: string; restUrl?: string; military?: boolean; weekStart?: number },
     overrides?,
     data?: { [key: string]: any },
   ) {
-    let fieldsets: Array<NovoFieldset> = [];
+    const fieldsets: Array<NovoFieldset> = [];
     let formFields = [];
 
     if (meta && meta.fields) {
@@ -519,17 +545,22 @@ export class FormUtils {
         } else if (this.isEmbeddedField(field)) {
           this.insertHeaderToFieldsets(fieldsets, field);
 
-          let embeddedFields = this.getEmbeddedFields(field);
+          const embeddedFields = this.getEmbeddedFields(field);
 
           embeddedFields.forEach((embeddedField) => {
             if (this.shouldCreateControl(embeddedField)) {
               let control = this.createControl(embeddedField, data, http, config, overrides, currencyFormat);
-              control = this.markControlAsEmbedded(control);
+              control = this.markControlAsEmbedded(control, field.dataSpecialization ? field.dataSpecialization.toLowerCase() : null);
               fieldsets[fieldsets.length - 1].controls.push(control);
+            } else if (this.isHeader(embeddedField)) {
+              this.insertHeaderToFieldsets(fieldsets, embeddedField);
             }
           });
         } else if (this.shouldCreateControl(field)) {
           let control = this.createControl(field, data, http, config, overrides, currencyFormat);
+          if (field.inlineEmbeddedAssociatedEntityField) {
+            control = this.markControlAsEmbedded(control, 'inline_embedded');
+          }
 
           if (fieldsets.length === 0) {
             fieldsets.push({ controls: [] });
@@ -551,12 +582,12 @@ export class FormUtils {
   }
 
   private isEmbeddedField(field) {
-    return field.dataSpecialization && field.dataSpecialization.toLowerCase() === 'embedded' && !field.readOnly;
+    return field.dataSpecialization && ['embedded'].includes(field.dataSpecialization.toLowerCase()) && !field.readOnly;
   }
 
   private createControl(field, data, http, config, overrides, currencyFormat) {
     const fieldData = this.isEmbeddedFieldData(field, data) ? this.getEmbeddedFieldData(field, data) : this.getFieldData(field, data);
-    let control = this.getControlForField(field, http, config, overrides, undefined, fieldData);
+    const control = this.getControlForField(field, http, config, overrides, undefined, fieldData);
     // Set currency format
     if (control.subType === 'currency') {
       control.currencyFormat = currencyFormat;
@@ -573,12 +604,12 @@ export class FormUtils {
   }
 
   private getEmbeddedFieldData(field, data) {
-    let [parentFieldName, fieldName] = field.name.split('.');
+    const [parentFieldName, fieldName] = field.name.split('.');
     return (data && data[parentFieldName] && data[parentFieldName][fieldName]) || null;
   }
 
   private getFormFields(meta) {
-    let sectionHeaders = meta.sectionHeaders
+    const sectionHeaders = meta.sectionHeaders
       ? meta.sectionHeaders.map((element) => {
           element.isSectionHeader = true;
           return element;
@@ -586,42 +617,92 @@ export class FormUtils {
       : [];
 
     let fields = meta.fields.map((field) => {
+      field.parentEntity = meta.entity;
       if (!field.hasOwnProperty('sortOrder')) {
         field.sortOrder = Number.MAX_SAFE_INTEGER - 1;
       }
       return field;
     });
 
-    return [...sectionHeaders, ...fields].sort(Helpers.sortByField(['sortOrder', 'name']));
+    // build list of fields that should be displayed inline but belong to associated entities
+    const inlineEmbeddedAssociatedEntityFields = this.getInlineEmbeddedFields(fields);
+
+    // remove the inline embedded fields because the associated entity fields were extracted above
+    // and will be added to the regular list of fields. This prevents the fields from being added multiple times.
+    fields = fields.filter((f) => !f.dataSpecialization || f.dataSpecialization.toLowerCase() !== 'inline_embedded');
+
+    // sort fields
+    return [...sectionHeaders, ...fields, ...inlineEmbeddedAssociatedEntityFields].sort(Helpers.sortByField(['sortOrder', 'name']));
+  }
+
+  private getInlineEmbeddedFields(fields) {
+    let inlineEmbeddedAssociatedEntityFields = [];
+    fields
+      .filter((f) => f.dataSpecialization && f.dataSpecialization.toLowerCase() === 'inline_embedded')
+      .forEach((f) => {
+        inlineEmbeddedAssociatedEntityFields = [...inlineEmbeddedAssociatedEntityFields, ...this.getAssociatedFieldsForInlineEmbedded(f)];
+      });
+    return inlineEmbeddedAssociatedEntityFields;
+  }
+
+  private getAssociatedFieldsForInlineEmbedded(field) {
+    let associatedEntityFields = [];
+    associatedEntityFields = this.getEmbeddedFields(field).map((aef) => {
+      aef.inlineEmbeddedAssociatedEntityField = true;
+      return aef;
+    });
+    return associatedEntityFields;
   }
 
   private getEmbeddedFields(subHeader) {
     return subHeader.associatedEntity.fields
       .filter((field) => field.name !== 'id')
       .map((field) => {
-        field.name = `${subHeader.name}.${field.name}`;
+        if (!field.name.startsWith(`${subHeader.name}.`)) {
+          field.name = `${subHeader.name}.${field.name}`;
+        }
         return field;
       })
       .sort(Helpers.sortByField(['sortOrder', 'name']));
   }
 
   private isHeader(field): boolean {
-    return !Helpers.isBlank(field) && field.hasOwnProperty('isSectionHeader') && field.isSectionHeader;
+    return (
+      !Helpers.isBlank(field) &&
+      ((field.hasOwnProperty('isSectionHeader') && field.isSectionHeader) ||
+        (field.dataSpecialization && field.dataSpecialization.toLowerCase() === 'section_header'))
+    );
   }
 
   private insertHeaderToFieldsets(fieldsets, field) {
-    fieldsets.push({
-      title: field.label,
-      icon: field.icon || 'bhi-section',
+    const constantProperties = {
       controls: [],
-    });
+      isEmbedded: field.dataSpecialization && field.dataSpecialization.toLowerCase() === 'embedded',
+      isInlineEmbedded: field.dataSpecialization && field.dataSpecialization.toLowerCase() === 'inline_embedded',
+      key: field.name,
+    };
+    if (field.name && field.name.startsWith('customObject') && field.associatedEntity && field.associatedEntity.label) {
+      fieldsets.push({
+        title: field.associatedEntity.label || field.label,
+        icon: field.icon || 'bhi-card-expand',
+        ...constantProperties,
+      });
+    } else {
+      fieldsets.push({
+        title: field.label,
+        icon: field.icon || 'bhi-section',
+        ...constantProperties,
+      });
+    }
   }
 
-  private markControlAsEmbedded(control) {
-    if (Helpers.isBlank(control['config'])) {
-      control['config'] = {};
+  private markControlAsEmbedded(control, dataSpecialization?: 'embedded' | 'inline_embedded') {
+    if (Helpers.isBlank(control.config)) {
+      control.config = {};
     }
-    control['config']['embedded'] = true;
+    control.config.embedded = true;
+    control.isEmbedded = dataSpecialization === 'embedded';
+    control.isInlineEmbedded = dataSpecialization === 'inline_embedded';
     return control;
   }
 
@@ -630,15 +711,23 @@ export class FormUtils {
     if (field.dataType === 'Boolean' && !field.options) {
       // TODO: dataType should only be determined by `determineInputType` which doesn't ever return 'Boolean' it
       // TODO: (cont.) returns `tiles`
-      return [{ value: false, label: this.labels.no }, { value: true, label: this.labels.yes }];
-    } else if (field.workflowOptions && fieldData) {
+      return [
+        { value: false, label: this.labels.no },
+        { value: true, label: this.labels.yes },
+      ];
+    } else if (field.dataSpecialization === 'ALL_WORKFLOW_OPTIONS' && field.options) {
+      return field.options;
+    } else if (field.workflowOptions) {
       return this.getWorkflowOptions(field.workflowOptions, fieldData);
-    } else if (field.dataSpecialization === 'SPECIALIZED_OPTIONS') {
-      return field.options.filter((o) => !o.readOnly);
+    } else if (
+      field.dataSpecialization === 'SPECIALIZED_OPTIONS' ||
+      (field.options && ['SpecializedOptionsLookup', 'SimplifiedOptionsLookup'].includes(field.dataType))
+    ) {
+      return field.options;
     } else if (field.optionsUrl) {
       return this.optionsService.getOptionsConfig(http, field, config);
     } else if (Array.isArray(field.options) && field.type === 'chips') {
-      let options = field.options;
+      const options = field.options;
       return {
         field: 'value',
         format: '$label',
@@ -652,16 +741,18 @@ export class FormUtils {
 
   private getWorkflowOptions(
     workflowOptions: { [key: string]: any },
-    fieldData: { [key: string]: any },
-  ): Array<{ value: string | number; label: string | number }> {
-    let currentValue: { value: string | number; label: string | number };
-    if (fieldData.id) {
-      currentValue = { value: fieldData.id, label: fieldData.label ? fieldData.label : fieldData.id };
+    fieldData: { id?: number; value?: string | number; label?: string | number } | null,
+  ): Array<{ id?: number; value?: string | number; label?: string | number }> {
+    let currentValue: { id?: number; value?: string | number; label?: string | number } = null;
+    let currentWorkflowOption: number | string = 'initial';
+    if (fieldData?.id) {
+      currentValue = { ...fieldData, value: fieldData.id, label: fieldData.label || fieldData.id };
+      currentWorkflowOption = fieldData.id;
     }
+    const updateWorkflowOptions: Array<{ id?: number; value?: string | number; label?: string | number }> =
+      workflowOptions[currentWorkflowOption] || [];
 
-    const currentWorkflowOption: number | string = fieldData.id ? fieldData.id : 'initial';
-    let updateWorkflowOptions: Array<{ value: string | number; label: string | number }> = workflowOptions[currentWorkflowOption] || [];
-
+    // Ensure that the current value is added to the beginning of the options list
     if (currentValue && !updateWorkflowOptions.find((option) => option.value === currentValue.value)) {
       updateWorkflowOptions.unshift(currentValue);
     }
@@ -730,8 +821,8 @@ export class FormUtils {
 
   forceValidation(form: NovoFormGroup): void {
     Object.keys(form.controls).forEach((key: string) => {
-      let control: any = form.controls[key];
-      if (control.required && Helpers.isBlank(form.value[control.key])) {
+      const control: any = form.controls[key];
+      if (control.required && Helpers.isBlank(form.getRawValue()[control.key])) {
         control.markAsDirty();
         control.markAsTouched();
       }
@@ -739,7 +830,7 @@ export class FormUtils {
   }
 
   isAddressEmpty(control: any): boolean {
-    let fieldList: string[] = ['address1', 'address2', 'city', 'state', 'zip', 'countryID'];
+    const fieldList: string[] = ['address1', 'address2', 'city', 'state', 'zip', 'countryID'];
     let valid: boolean = true;
     if (control.value && control.config) {
       fieldList.forEach((subfield: string) => {
@@ -775,24 +866,40 @@ export class FormUtils {
     }
   }
 
-  /**
-   * Get the min start date of a Date base on field data.
-   */
-  private getStartDate(field: any): Date | null {
-    if (field.allowedDateRange) {
-      return this.getStartDateFromRange(field.allowedDateRange);
+  private getEndDateFromRange(dateRange: { maxDate: string; minOffset: number }): Date {
+    if (dateRange.maxDate) {
+      return dateFns.parse(dateRange.maxDate);
+    } else if (dateRange.minOffset) {
+      return dateFns.addDays(dateFns.startOfToday(), dateRange.minOffset);
     }
-    // there is no restriction on the start date
-    return null;
   }
 
-  private inferStartDate(controlConfig, field) {
-    if (field.dataType === 'Date') {
-      const startDate = this.getStartDate(field);
-      if (startDate) {
-        controlConfig.startDate = startDate;
-      }
-      return startDate;
+  /**
+   * Get the min start date and max end date of a Date base on field data.
+   */
+
+  private inferDateRange(controlConfig, field): void {
+    if (field.dataType === 'Date' && field.allowedDateRange) {
+      controlConfig.startDate = this.getStartDateFromRange(field.allowedDateRange);
+      controlConfig.endDate = this.getEndDateFromRange(field.allowedDateRange);
+      controlConfig.disabledDateMessage = field.allowedDateRange?.disabledDateMessage;
     }
+  }
+
+  inflateEmbeddedProperties(data: object): object {
+    if (data) {
+      Object.keys(data)
+        .filter((fieldName) => fieldName.includes('.'))
+        .forEach((field) => {
+          const [parentFieldName, fieldName] = field.split('.');
+          if (!data[parentFieldName]) {
+            data[parentFieldName] = {};
+          }
+          data[parentFieldName][fieldName] = data[field];
+          delete data[field];
+        });
+    }
+
+    return data;
   }
 }

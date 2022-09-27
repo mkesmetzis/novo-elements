@@ -1,8 +1,13 @@
+import { TemplateRef } from '@angular/core';
+
 // @dynamic
 export class Helpers {
+  static isTemplateRef(value: any): boolean {
+    return value instanceof TemplateRef;
+  }
+
   /**
    * Swallows an event to stop further execution
-   * @param event
    */
   static swallowEvent(event) {
     if (event) {
@@ -11,15 +16,28 @@ export class Helpers {
     }
   }
 
-  static interpolate(str: string, props: any): string {
+  static interpolate(str: string | Function, props: any): string {
+    if (typeof str === 'function') {
+      return str(props);
+    }
     if (this.isDate(props)) {
       props = this.dateToObject(props);
     }
+    // else {
+    //   props = Object.entries(props).reduce((obj, [key, value]) => {
+    //     const res = { ...obj, [key]: value };
+    //     if (this.isIsoDate(value as string)) {
+    //       res[`${key}Parts`] = this.dateToObject(new Date(value as string));
+    //     }
+    //     return res;
+    //   }, {});
+    // }
+
     return str.replace(/\$([\w\.]+)/g, (original: string, key: string) => {
-      let keys: string[] = key.split('.');
+      const keys: string[] = key.split('.');
       let value = props[keys.shift()];
       while (keys.length && value !== undefined) {
-        let k = keys.shift();
+        const k = keys.shift();
         value = k ? value[k] : `${value}.`;
       }
       return value !== undefined ? value : '';
@@ -32,15 +50,15 @@ export class Helpers {
     // It will either return the first successful replacement of ALL variables,
     // or an empty string
     if (Array.isArray(formatString)) {
-      let successes: string[] = [];
-      let failures: string[] = [];
+      const successes: string[] = [];
+      const failures: string[] = [];
       formatString.forEach((format: string) => {
         let isSuccess: boolean = true;
-        let attempt = format.replace(/\$([\w\.]+)/g, (original, key) => {
-          let keys = key.split('.');
+        const attempt = format.replace(/\$([\w\.]+)/g, (original, key) => {
+          const keys = key.split('.');
           let value = data[keys.shift()];
           while (keys.length && value !== undefined) {
-            let k = keys.shift();
+            const k = keys.shift();
             value = k ? value[k] : `${value}.`;
           }
           if (isSuccess && Helpers.isEmpty(value)) {
@@ -68,8 +86,11 @@ export class Helpers {
    * @param str   The string to interpolate
    * @param props The params to replace in string.
    */
-  static validateInterpolationProps(str: string, props: any): boolean {
-    let keys = str.match(/\$([\w\.]+)/g);
+  static validateInterpolationProps(str: string | Function, props: any): boolean {
+    if (typeof str === 'function') {
+      return true;
+    }
+    const keys = str.match(/\$([\w\.]+)/g);
     return keys.every((key) => {
       return props.hasOwnProperty(key.substr(1));
     });
@@ -130,7 +151,15 @@ export class Helpers {
     return obj instanceof Date;
   }
 
-  static convertToArray(obj: unknown): any[] {
+  static isIsoDate(str: string) {
+    if (!/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/.test(str)) {
+      return false;
+    }
+    const d = new Date(str);
+    return d.toISOString() === str;
+  }
+
+  static convertToArray(obj: unknown) {
     if (obj === undefined) {
       return [];
     } else if (!Array.isArray(obj)) {
@@ -148,7 +177,7 @@ export class Helpers {
         fields = [fields];
       }
       for (let i = 0; i < fields.length; i++) {
-        let field: string = fields[i];
+        const field: string = fields[i];
         let first = previous[field] || '';
         let second = current[field] || '';
 
@@ -178,7 +207,7 @@ export class Helpers {
 
   static filterByField(key, value) {
     return (item) => {
-      let results = [];
+      const results = [];
       let field = can(item).have(key);
       if (value instanceof Function) {
         results.push(value(field, item));
@@ -207,9 +236,9 @@ export class Helpers {
         if (value.not) {
           results.push(!Helpers.filterByField(key, value.not)(item));
         }
-        for (let subkey in value) {
+        for (const subkey in value) {
           if (['min', 'max', 'any', 'all', 'not'].indexOf(subkey) < 0) {
-            let subvalue = value[subkey];
+            const subvalue = value[subkey];
             results.push(Helpers.filterByField(`${key}.${subkey}`, subvalue)(item));
           }
         }
@@ -227,17 +256,16 @@ export class Helpers {
 
   static deepClone(item: any): any {
     if (Array.isArray(item)) {
-      let newArr = [];
+      const newArr = [];
       for (let i = item.length; i-- > 0; ) {
         // tslint:disable-line
         newArr[i] = Helpers.deepClone(item[i]);
       }
       return newArr;
     }
-    if (typeof item === 'function' && !/\(\) \{ \[native/.test(item.toString())) {
+    if (typeof item === 'function' && !/\(\) \{ \[native/.test(item.toString()) && !item.toString().startsWith('class')) {
       let obj;
-      eval('obj = ' + item.toString()); // tslint:disable-line
-      for (let k in item) {
+      for (const k in item) {
         if (k in item) {
           obj[k] = Helpers.deepClone(item[k]);
         }
@@ -245,8 +273,8 @@ export class Helpers {
       return obj;
     }
     if (item && typeof item === 'object') {
-      let obj = {};
-      for (let k in item) {
+      const obj = {};
+      for (const k in item) {
         if (k in item) {
           obj[k] = Helpers.deepClone(item[k]);
         }
@@ -320,9 +348,7 @@ export class Helpers {
     }
   }
 
-  static dateToObject(
-    date: Date,
-  ): {
+  static dateToObject(date: Date): {
     day: string;
     dayPeriod: string;
     era: string;
@@ -333,7 +359,7 @@ export class Helpers {
     weekday: string;
     year: string;
   } {
-    let dateObj = {
+    const dateObj = {
       day: '',
       dayPeriod: '',
       era: '',
@@ -372,7 +398,7 @@ export class Can {
   }
 
   have(key: string): any {
-    let props = key.split('.');
+    const props = key.split('.');
     let item: any = this.obj;
     for (let i = 0; i < props.length; i++) {
       item = item[props[i]];
@@ -388,9 +414,6 @@ export class Can {
   }
 }
 
-/**
- * @param obj
- */
 export function can(obj: any) {
   return new Can(obj);
 }

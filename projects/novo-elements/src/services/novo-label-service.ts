@@ -1,6 +1,6 @@
 // NG2
-import { Injectable, Inject, Optional, LOCALE_ID } from '@angular/core';
-import DateTimeFormatPart = Intl.DateTimeFormatPart;
+import { Inject, Injectable, LOCALE_ID, Optional } from '@angular/core';
+//  import DateTimeFormatPart = Intl.DateTimeFormatPart;
 
 interface TimeFormatParts {
   hour: string;
@@ -8,8 +8,14 @@ interface TimeFormatParts {
   dayPeriod?: string;
 }
 
+export interface BigDecimalFormatOptions extends Intl.NumberFormatOptions {
+  useAccountingFormat?: boolean; // Render negative numbers using parens. True: "(3.14)", False: "-3.14"
+}
+
 @Injectable()
 export class NovoLabelService {
+  and = 'and';
+  not = 'not';
   filters = 'Filter';
   clear = 'Clear';
   sort = 'Sort';
@@ -17,6 +23,7 @@ export class NovoLabelService {
   dateAdded = 'Date Added';
   emptyTableMessage = 'No Records to display...';
   noMatchingRecordsMessage = 'No Matching Records';
+  noMoreRecordsMessage = 'No More Records';
   erroredTableMessage = 'Oops! An error occurred.';
   pickerError = 'Oops! An error occurred.';
   pickerTextFieldEmpty = 'Begin typing to see results.';
@@ -30,7 +37,12 @@ export class NovoLabelService {
   cancel = 'Cancel';
   next = 'Next';
   itemsPerPage = 'Items per page:';
+  chooseAField = 'Choose a field...';
+  operator = 'Operator...';
   select = 'Select...';
+  value = 'Value...';
+  selectDateRange = 'Select Date Range...'
+  typeToAddChips = 'Type to add chips...'
   selected = 'Selected';
   selectAllOnPage = 'Select all on page';
   deselectAll = 'Deselect all';
@@ -39,11 +51,14 @@ export class NovoLabelService {
   move = 'Move';
   startDate = 'Start Date';
   endDate = 'End Date';
+  rate = 'Rate';
   more = 'more';
   clearAll = 'CLEAR ALL';
   clearAllNormalCase = 'Clear All';
   clearSort = 'Clear Sort';
   clearFilter = 'Clear Filter';
+  clearSearch = 'Clear Search';
+  clearSelected = 'Clear Selected';
   today = 'Today';
   now = 'Now';
   isRequired = 'is required';
@@ -83,6 +98,7 @@ export class NovoLabelService {
   noItems = 'There are no items';
   dateFormat = 'MM/dd/yyyy';
   dateFormatPlaceholder = 'MM/DD/YYYY';
+  localDatePlaceholder = 'mm/dd/yyyy';
   timeFormatPlaceholderAM = 'hh:mm AM';
   timeFormatPlaceholder24Hour = 'HH:mm';
   timeFormatAM = 'AM';
@@ -94,7 +110,7 @@ export class NovoLabelService {
   actions = 'Actions';
   all = 'All';
   groupedMultiPickerEmpty = 'No items to display';
-  groupedMultiPickerSelectCategory = 'Select a category from the right to get started';
+  groupedMultiPickerSelectCategory = 'Select a category from the left to get started';
   add = 'Add';
   encryptedFieldTooltip = 'This data has been stored at the highest level of security';
   noStatesForCountry = 'No states available for the selected country';
@@ -102,11 +118,27 @@ export class NovoLabelService {
   invalidIntegerInput = 'Special characters are not allowed for';
   maxRecordsReached = 'Sorry, you have reached the maximum number of records allowed for this field';
   selectFilterOptions = 'Please select one or more filter options below.';
+  addCondition = 'Add Condition';
+  includeAny = 'Include Any';
+  includeAll = 'Include All';
+  exclude = 'Exclude';
+  radius = 'Radius';
+  equals = 'Equals';
+  equalTo = 'Equal To';
+  greaterThan = 'Greater Than';
+  lessThan = 'Less Than';
+  doesNotEqual = 'Does Not Equal';
+  true = 'True';
+  false = 'False';
+  before = 'Before';
+  after = 'After';
+  between = 'Between';
+  within = 'Within';
 
   constructor(
     @Optional()
     @Inject(LOCALE_ID)
-    public userLocale: string = 'en-US',
+    public userLocale = 'en-US',
   ) {}
 
   maxlengthMetWithField(field: string, maxlength: number): string {
@@ -137,7 +169,7 @@ export class NovoLabelService {
     return `Showing ${shown} of ${total} Results.`;
   }
 
-  totalRecords(total: number, select: boolean = false) {
+  totalRecords(total: number, select = false) {
     return select ? `Select all ${total} records.` : `De-select remaining ${total} records.`;
   }
 
@@ -145,48 +177,63 @@ export class NovoLabelService {
     return this.dateFormat;
   }
 
+  localizedDatePlaceholder(): string {
+    return this.localDatePlaceholder;
+  }
+
   tabbedGroupClearSuggestion(tabLabelPlural: string): string {
     return `Clear your search to see all ${tabLabelPlural}.`;
   }
 
   formatDateWithFormat(value: any, format: Intl.DateTimeFormatOptions) {
-    let date = value instanceof Date ? value : new Date(value);
+    const date = value instanceof Date ? value : new Date(value);
     if (date.getTime() !== date.getTime()) {
       return value;
     }
     return new Intl.DateTimeFormat(this.userLocale, format).format(date);
   }
 
+  formatToTimeOnly(param) {}
+
+  formatToDateOnly(param) {}
+
   formatTimeWithFormat(value: any, format: Intl.DateTimeFormatOptions): string {
-    let date = value instanceof Date ? value : new Date(value);
+    const date = value instanceof Date ? value : new Date(value);
     if (date.getTime() !== date.getTime()) {
       return value;
     }
-    let timeParts: { [type: string]: string } = Intl.DateTimeFormat(this.userLocale, format)
+    const timeParts: { [type: string]: string } = Intl.DateTimeFormat(this.userLocale, format)
       .formatToParts(date)
       .reduce((obj, part) => {
         obj[part.type] = part.value;
         return obj;
       }, {});
-    const dayperiod = timeParts.dayperiod ? timeParts.dayperiod : '';
-    return `${timeParts.hour}:${timeParts.minute}${dayperiod}`;
+    const dayPeriod = timeParts.dayPeriod ? timeParts.dayPeriod : '';
+    const res = `${timeParts.hour}:${timeParts.minute} ${dayPeriod}`;
+    return res;
   }
 
-  getWeekdays(): string[] {
+  getWeekdays(weekStartsOn = 0): string[] {
     function getDay(dayOfWeek) {
-      let dt = new Date();
+      const dt = new Date();
       return dt.setDate(dt.getDate() - dt.getDay() + dayOfWeek);
     }
 
-    return [getDay(0), getDay(1), getDay(2), getDay(3), getDay(4), getDay(5), getDay(6)].reduce((weekdays, dt) => {
+    let weekdays = [getDay(0), getDay(1), getDay(2), getDay(3), getDay(4), getDay(5), getDay(6)].reduce((weekdays, dt) => {
       weekdays.push(new Intl.DateTimeFormat(this.userLocale, { weekday: 'long' }).format(dt));
       return weekdays;
     }, []);
+
+    if (weekStartsOn > 0 && weekStartsOn <= 6) {
+      const newStart = weekdays.splice(weekStartsOn);
+      weekdays = [...newStart, ...weekdays];
+    }
+    return weekdays;
   }
 
   getMonths(): string[] {
     function getMonth(month) {
-      let dt = new Date();
+      const dt = new Date();
       return dt.setMonth(month, 1);
     }
 
@@ -229,33 +276,52 @@ export class NovoLabelService {
   }
 
   formatCurrency(value: number): string {
-    let options = { style: 'currency', currency: 'USD' };
+    const options = { style: 'currency', currency: 'USD' };
     return new Intl.NumberFormat(this.userLocale, options).format(value);
   }
 
-  formatBigDecimal(value: number): string {
-    let valueAsString = value ? value.toString() : '0';
-    // truncate at two decimals (do not round)
-    const decimalIndex = valueAsString.indexOf('.');
-    if (decimalIndex > -1 && decimalIndex + 3 < valueAsString.length) {
-      valueAsString = valueAsString.substring(0, valueAsString.indexOf('.') + 3);
-    }
-    // convert back to number
-    const truncatedValue = Number(valueAsString);
-    const options = { style: 'decimal', minimumFractionDigits: 2, maximumFractionDigits: 2 };
+  /**
+   * Extends the Intl.numberFormat capability with two extra features:
+   *  - Does NOT round values, but instead truncates to maximumFractionDigits
+   *  - By default uses accounting format for negative numbers: (3.14) instead of -3.14.
+   *
+   * @param value           The number value to convert to string
+   * @param overrideOptions Allows for overriding options used and passed to Intl.NumberFormat()
+   */
+  formatBigDecimal(value: number, overrideOptions?: BigDecimalFormatOptions): string {
+    const defaultOptions: BigDecimalFormatOptions = {
+      style: 'decimal',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+      useAccountingFormat: true,
+    };
+    const options: BigDecimalFormatOptions = Object.assign(defaultOptions, overrideOptions);
+    const truncatedValue = this.truncateToPrecision(value, options.maximumFractionDigits);
     let _value = new Intl.NumberFormat(this.userLocale, options).format(truncatedValue);
     if (value < 0) {
-      _value = `(${_value.slice(1)})`;
+      _value = options.useAccountingFormat ? `(${_value.slice(1)})` : `-${_value.slice(1)}`;
     }
     return _value;
   }
 
-  formatNumber(value: any, options?: Intl.NumberFormatOptions): string {
+  /**
+   * Performs a string-based truncating of a number with no rounding
+   */
+  truncateToPrecision(value: number, precision: number) {
+    let valueAsString = value ? value.toString() : '0';
+    const decimalIndex = valueAsString.indexOf('.');
+    if (decimalIndex > -1 && decimalIndex + precision + 1 < valueAsString.length) {
+      valueAsString = valueAsString.substring(0, valueAsString.indexOf('.') + precision + 1);
+    }
+    return Number(valueAsString);
+  }
+
+  formatNumber(value, options?: Intl.NumberFormatOptions) {
     return new Intl.NumberFormat(this.userLocale, options).format(value);
   }
 
-  formatDateShort(value: any): string {
-    let options: Intl.DateTimeFormatOptions = {
+  formatDateShort(value: string | number | Date) {
+    const options: Intl.DateTimeFormatOptions = {
       // DD/MM/YYYY, HH:MM A - 02/14/2017, 1:17 PM
       month: '2-digit',
       day: '2-digit',
@@ -263,28 +329,28 @@ export class NovoLabelService {
       hour: 'numeric',
       minute: '2-digit',
     };
-    let _value = value === null || value === undefined || value === '' ? new Date() : new Date(value);
+    const _value = value === null || value === undefined || value === '' ? new Date() : new Date(value);
     return new Intl.DateTimeFormat(this.userLocale, options).format(_value);
   }
 
-  formatTime(value: any): string {
-    let options: Intl.DateTimeFormatOptions = {
+  formatTime(value: string | number | Date) {
+    const options: Intl.DateTimeFormatOptions = {
       // HH:MM A - 1:17 PM
       hour: 'numeric',
       minute: '2-digit',
     };
-    let _value = value === null || value === undefined || value === '' ? new Date() : new Date(value);
+    const _value = value === null || value === undefined || value === '' ? new Date() : new Date(value);
     return new Intl.DateTimeFormat(this.userLocale, options).format(_value);
   }
 
-  formatDate(value: any): string {
-    let options: Intl.DateTimeFormatOptions = {
+  formatDate(value: string | number | Date) {
+    const options: Intl.DateTimeFormatOptions = {
       // DD/MM/YYYY - 02/14/2017
       month: '2-digit',
       day: '2-digit',
       year: 'numeric',
     };
-    let _value = value === null || value === undefined || value === '' ? new Date() : new Date(value);
+    const _value = value === null || value === undefined || value === '' ? new Date() : new Date(value);
     return new Intl.DateTimeFormat(this.userLocale, options).format(_value);
   }
 }
